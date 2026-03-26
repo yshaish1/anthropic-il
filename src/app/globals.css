@@ -1,26 +1,88 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf9f5;
+  --foreground: #1b1c1a;
+  --surface: #fbf9f5;
+  --surface-container: #efeeea;
+  --surface-container-low: #f5f3ef;
+  --surface-container-high: #eae8e4;
+  --surface-container-highest: #e4e2de;
+  --primary: #030612;
+  --primary-container: #1a1f2c;
+  --secondary: #ab2c5d;
+  --secondary-container: #fd6c9c;
+  --secondary-fixed: #ffd9e1;
+  --tertiary: #0b0500;
+  --tertiary-container: #281d0b;
+  --on-primary: #ffffff;
+  --on-surface: #1b1c1a;
+  --on-surface-variant: #45464c;
+  --outline: #76777c;
+  --outline-variant: #c6c6cc;
+  --coral: #e8634a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121214;
+    --foreground: #e4e2de;
+    --surface: #121214;
+    --surface-container: #1e1f22;
+    --surface-container-low: #1a1a1d;
+    --surface-container-high: #282a2d;
+    --surface-container-highest: #333538;
+    --primary: #c2c6d8;
+    --primary-container: #2a2f3c;
+    --secondary: #ffb1c5;
+    --secondary-container: #8b0e45;
+    --secondary-fixed: #ffd9e1;
+    --on-primary: #161b28;
+    --on-surface: #e4e2de;
+    --on-surface-variant: #c6c6cc;
+    --outline: #8f909a;
+    --outline-variant: #45464c;
+    --coral: #ff8a75;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-surface: var(--surface);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-highest: var(--surface-container-highest);
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-on-primary: var(--on-primary);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-coral: var(--coral);
+  --font-sans: var(--font-rubik);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-rubik, "Rubik", sans-serif);
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+/* Hebrew text optimizations */
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* Embedded English in Hebrew context */
+[dir="ltr"] {
+  unicode-bidi: isolate;
 }

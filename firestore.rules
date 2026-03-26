@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Articles - public read
+    match /ail_articles/{articleId} {
+      allow read: if true;
+      allow write: if false; // server-only via Admin SDK
+    }
+
+    // Reddit posts - public read (curated only enforced in queries)
+    match /ail_reddit_posts/{postId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Tips - public read
+    match /ail_tips/{tipId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Releases - public read
+    match /ail_releases/{releaseId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Fetch logs - admin read only
+    match /ail_fetch_logs/{logId} {
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/ail_admins/$(request.auth.uid));
+      allow write: if false;
+    }
+
+    // Admin whitelist - admin read only
+    match /ail_admins/{adminId} {
+      allow read: if request.auth != null && request.auth.uid == adminId;
+      allow write: if false;
+    }
+  }
+}
