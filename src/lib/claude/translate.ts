@@ -94,3 +94,101 @@ Respond in JSON format only:
 
   return JSON.parse(jsonMatch[0]) as RedditTranslation;
 }
+
+interface ArticleClassification {
+  isRelease: boolean;
+  type: "model" | "api" | "pricing" | "feature";
+  version: string | null;
+}
+
+export async function classifyArticle(
+  title: string,
+  bodyPreview: string
+): Promise<ArticleClassification> {
+  const message = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 256,
+    messages: [
+      {
+        role: "user",
+        content: `Analyze this Anthropic article and determine if it's a product release/update announcement.
+
+Title: ${title}
+Preview: ${bodyPreview.slice(0, 500)}
+
+Classification rules:
+- "model": Announces a new Claude model or model update (Claude 3.5 Sonnet, Opus, Haiku, etc.)
+- "api": Announces API changes, new endpoints, SDK updates, developer tools
+- "pricing": Announces pricing changes, new plans, cost updates
+- "feature": Announces new product features, capabilities, tools (like Artifacts, Computer Use, etc.)
+- If it's NOT a release (e.g. a blog post, policy paper, research, company news) → isRelease: false
+
+Respond in JSON only:
+{"isRelease": true/false, "type": "model"|"api"|"pricing"|"feature", "version": "version string or null"}`,
+      },
+    ],
+  });
+
+  const text =
+    message.content[0].type === "text" ? message.content[0].text : "";
+  const jsonMatch = text.match(/\{[\s\S]*?\}/);
+  if (!jsonMatch) {
+    return { isRelease: false, type: "feature", version: null };
+  }
+
+  return JSON.parse(jsonMatch[0]) as ArticleClassification;
+}
+
+interface GeneratedTip {
+  titleHe: string;
+  contentHe: string;
+  category: "prompting" | "api" | "claude-code" | "general";
+  difficulty: "beginner" | "intermediate" | "advanced";
+}
+
+export async function generateTips(
+  existingTitles: string[]
+): Promise<GeneratedTip[]> {
+  const message = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4096,
+    messages: [
+      {
+        role: "user",
+        content: `Generate 3 practical tips for using Claude AI. Write entirely in Hebrew (except technical terms that are commonly used in English like API, prompt, token, Claude Code, etc.).
+
+Categories (pick a mix):
+- "prompting": Tips for writing better prompts
+- "api": Tips for using the Anthropic API
+- "claude-code": Tips for using Claude Code (CLI tool)
+- "general": General tips for getting the most out of Claude
+
+Difficulties (pick a mix):
+- "beginner": For new users
+- "intermediate": For regular users
+- "advanced": For power users/developers
+
+${existingTitles.length > 0 ? `Avoid these existing topics:\n${existingTitles.join("\n")}` : ""}
+
+Respond in JSON array only:
+[
+  {
+    "titleHe": "כותרת בעברית",
+    "contentHe": "תוכן מפורט בעברית - 3-5 משפטים עם דוגמאות פרקטיות",
+    "category": "prompting",
+    "difficulty": "beginner"
+  }
+]`,
+      },
+    ],
+  });
+
+  const text =
+    message.content[0].type === "text" ? message.content[0].text : "";
+  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse tips generation response");
+  }
+
+  return JSON.parse(jsonMatch[0]) as GeneratedTip[];
+}

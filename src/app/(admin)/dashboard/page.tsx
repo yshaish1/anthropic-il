@@ -54,12 +54,32 @@ interface Stats {
   tips: number;
 }
 
+interface TipItem {
+  id: string;
+  titleHe: string;
+  contentHe: string;
+  category: string;
+  difficulty: string;
+  published: boolean;
+  order: number;
+}
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState<FetchType | null>(null);
   const [fetchLogs, setFetchLogs] = useState<FetchLogEntry[]>([]);
+  const [tips, setTips] = useState<TipItem[]>([]);
+  const [editingTip, setEditingTip] = useState<TipItem | null>(null);
+  const [showTipForm, setShowTipForm] = useState(false);
+  const [generatingTips, setGeneratingTips] = useState(false);
+  const [tipForm, setTipForm] = useState({
+    titleHe: "",
+    contentHe: "",
+    category: "general",
+    difficulty: "beginner",
+  });
   const [stats, setStats] = useState<Stats>({
     articles: 0,
     reddit: 0,
@@ -87,6 +107,7 @@ export default function DashboardPage() {
     if (!isAdmin) return;
     loadFetchLogs();
     loadStats();
+    loadTips();
   }, [isAdmin]);
 
   async function loadStats() {
@@ -121,6 +142,111 @@ export default function DashboardPage() {
         (d) => ({ id: d.id, ...d.data() }) as FetchLogEntry
       )
     );
+  }
+
+  async function loadTips() {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/admin/manage-tips", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTips(data);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function saveTip(isEdit: boolean) {
+    if (!user) return;
+    const token = await user.getIdToken();
+    const method = isEdit ? "PUT" : "POST";
+    const body = isEdit
+      ? { ...tipForm, id: editingTip?.id }
+      : { ...tipForm, published: false };
+
+    const res = await fetch("/api/admin/manage-tips", {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      toast.success(isEdit ? "הטיפ עודכן" : "הטיפ נוצר");
+      setShowTipForm(false);
+      setEditingTip(null);
+      setTipForm({ titleHe: "", contentHe: "", category: "general", difficulty: "beginner" });
+      loadTips();
+      loadStats();
+    } else {
+      toast.error("שגיאה בשמירת הטיפ");
+    }
+  }
+
+  async function deleteTip(id: string) {
+    if (!user || !confirm("למחוק את הטיפ?")) return;
+    const token = await user.getIdToken();
+    const res = await fetch("/api/admin/manage-tips", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) {
+      toast.success("הטיפ נמחק");
+      loadTips();
+      loadStats();
+    }
+  }
+
+  async function togglePublish(tip: TipItem) {
+    if (!user) return;
+    const token = await user.getIdToken();
+    await fetch("/api/admin/manage-tips", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id: tip.id, published: !tip.published }),
+    });
+    loadTips();
+    loadStats();
+  }
+
+  async function autoGenerateTips() {
+    if (!user) return;
+    setGeneratingTips(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/admin/trigger-fetch", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ type: "tips" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`נוצרו ${data.newItems} טיפים חדשים`);
+        loadTips();
+        loadStats();
+      } else {
+        toast.error(data.error || "שגיאה ביצירת טיפים");
+      }
+    } catch {
+      toast.error("שגיאה ביצירת טיפים");
+    }
+    setGeneratingTips(false);
   }
 
   async function handleSignIn() {
@@ -332,6 +458,157 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
+        </section>
+
+        {/* Tips management */}
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-primary">ניהול טיפים</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={autoGenerateTips}
+                disabled={generatingTips}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/10 text-secondary font-medium text-sm hover:bg-secondary/20 transition-colors"
+              >
+                {generatingTips ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Lightbulb className="h-4 w-4" />
+                )}
+                צור טיפים אוטומטיים
+              </button>
+              <button
+                onClick={() => {
+                  setShowTipForm(true);
+                  setEditingTip(null);
+                  setTipForm({ titleHe: "", contentHe: "", category: "general", difficulty: "beginner" });
+                }}
+                className="px-4 py-2 rounded-lg bg-primary text-on-primary font-medium text-sm hover:bg-primary-container transition-colors"
+              >
+                + הוסף טיפ
+              </button>
+            </div>
+          </div>
+
+          {/* Tip form */}
+          {showTipForm && (
+            <div className="bg-card rounded-xl border border-outline-variant/10 p-6 mb-4">
+              <h3 className="font-bold text-primary mb-4">
+                {editingTip ? "עריכת טיפ" : "טיפ חדש"}
+              </h3>
+              <div className="space-y-4">
+                <input
+                  value={tipForm.titleHe}
+                  onChange={(e) => setTipForm({ ...tipForm, titleHe: e.target.value })}
+                  placeholder="כותרת הטיפ"
+                  className="w-full px-4 py-3 rounded-lg border border-outline-variant/20 bg-surface text-primary text-right"
+                />
+                <textarea
+                  value={tipForm.contentHe}
+                  onChange={(e) => setTipForm({ ...tipForm, contentHe: e.target.value })}
+                  placeholder="תוכן הטיפ"
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-lg border border-outline-variant/20 bg-surface text-primary text-right"
+                />
+                <div className="flex gap-4">
+                  <select
+                    value={tipForm.category}
+                    onChange={(e) => setTipForm({ ...tipForm, category: e.target.value })}
+                    className="px-4 py-2 rounded-lg border border-outline-variant/20 bg-surface text-primary"
+                  >
+                    <option value="general">כללי</option>
+                    <option value="prompting">פרומפטים</option>
+                    <option value="api">API</option>
+                    <option value="claude-code">Claude Code</option>
+                  </select>
+                  <select
+                    value={tipForm.difficulty}
+                    onChange={(e) => setTipForm({ ...tipForm, difficulty: e.target.value })}
+                    className="px-4 py-2 rounded-lg border border-outline-variant/20 bg-surface text-primary"
+                  >
+                    <option value="beginner">מתחיל</option>
+                    <option value="intermediate">בינוני</option>
+                    <option value="advanced">מתקדם</option>
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => saveTip(!!editingTip)}
+                    className="px-6 py-2 rounded-lg bg-primary text-on-primary font-medium text-sm"
+                  >
+                    {editingTip ? "עדכן" : "שמור"}
+                  </button>
+                  <button
+                    onClick={() => { setShowTipForm(false); setEditingTip(null); }}
+                    className="px-6 py-2 rounded-lg border border-outline-variant/20 text-on-surface-variant font-medium text-sm"
+                  >
+                    ביטול
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tips list */}
+          {tips.length > 0 ? (
+            <div className="space-y-2">
+              {tips.filter(t => !("_notRelease" in t)).map((tip) => (
+                <div
+                  key={tip.id}
+                  className="flex items-center gap-4 p-4 bg-card rounded-xl border border-outline-variant/10"
+                >
+                  <button
+                    onClick={() => togglePublish(tip)}
+                    className={cn(
+                      "w-3 h-3 rounded-full shrink-0 transition-colors",
+                      tip.published ? "bg-emerald-500" : "bg-outline-variant"
+                    )}
+                    title={tip.published ? "פורסם" : "טיוטה"}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-primary text-sm line-clamp-1">
+                      {tip.titleHe}
+                    </span>
+                    <div className="flex gap-2 mt-1">
+                      <span className="text-[10px] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded-full">
+                        {tip.category}
+                      </span>
+                      <span className="text-[10px] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded-full">
+                        {tip.difficulty}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => {
+                        setEditingTip(tip);
+                        setTipForm({
+                          titleHe: tip.titleHe,
+                          contentHe: tip.contentHe,
+                          category: tip.category,
+                          difficulty: tip.difficulty,
+                        });
+                        setShowTipForm(true);
+                      }}
+                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-xs"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => deleteTip(tip.id)}
+                      className="p-2 rounded-lg text-red-500 hover:bg-red-50 text-xs"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-card rounded-xl border border-outline-variant/10 p-8 text-center">
+              <p className="text-on-surface-variant">אין טיפים עדיין. צור טיפים אוטומטיים או הוסף ידנית.</p>
+            </div>
+          )}
         </section>
 
         {/* Fetch log table */}

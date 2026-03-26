@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { type } = await request.json();
-  if (!["news", "reddit", "releases"].includes(type)) {
+  if (!["news", "reddit", "releases", "tips"].includes(type)) {
     return NextResponse.json(
       { error: "Invalid fetch type" },
       { status: 400 }
@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
       ? "/api/cron/fetch-news"
       : type === "reddit"
         ? "/api/cron/fetch-reddit"
-        : "/api/cron/fetch-news"; // releases reuses news for now
+        : type === "tips"
+          ? "/api/cron/generate-tips"
+          : "/api/cron/fetch-releases";
 
   try {
     const res = await fetch(`${baseUrl}${cronPath}`, {
