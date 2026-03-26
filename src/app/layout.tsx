@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Rubik } from "next/font/google";
+import { Rubik, Be_Vietnam_Pro } from "next/font/google";
 import { Toaster } from "sonner";
 import QueryProvider from "@/components/providers/QueryProvider";
 import Navbar from "@/components/layout/Navbar";
@@ -10,6 +10,12 @@ const rubik = Rubik({
   variable: "--font-rubik",
   subsets: ["latin", "hebrew"],
   weight: ["300", "400", "500", "600", "700"],
+});
+
+const beVietnamPro = Be_Vietnam_Pro({
+  variable: "--font-be-vietnam-pro",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -24,8 +30,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl" className={`${rubik.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+    <html
+      lang="he"
+      dir="rtl"
+      className={`${rubik.variable} ${beVietnamPro.variable} antialiased`}
+      style={{ colorScheme: "light" }}
+    >
+      <body
+        style={{ backgroundColor: "#fbf9f5", color: "#1b1c1a" }}
+        className="min-h-dvh flex flex-col"
+      >
         <QueryProvider>
           <Navbar />
           <main className="flex-1">{children}</main>

@@ -13,11 +13,6 @@ interface RedditCardProps {
   className?: string;
 }
 
-const subredditColors: Record<string, string> = {
-  ClaudeAI: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200",
-  anthropic: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200",
-};
-
 export default function RedditCard({
   titleHe,
   summaryHe,
@@ -34,52 +29,66 @@ export default function RedditCard({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(
-        "group flex gap-4 rounded-xl bg-surface-container-low hover:bg-surface-highest p-5 transition-all duration-200",
-        className
-      )}
+      className={cn("group flex transition-colors", className)}
+      style={{
+        gap: "20px",
+        padding: "20px 0",
+        borderBottom: "1px solid #e4e2de",
+      }}
     >
       {/* Score */}
-      <div className="flex flex-col items-center justify-start gap-0.5 min-w-[3rem] text-center">
-        <ArrowUp className="h-4 w-4 text-coral" />
-        <span className="text-sm font-bold text-primary">{score}</span>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "48px", paddingTop: "4px", gap: "2px" }}>
+        <ArrowUp style={{ width: "16px", height: "16px", color: "#ab2c5d" }} />
+        <span style={{ fontSize: "16px", fontWeight: 700, color: "#030612" }}>{score}</span>
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span
-            className={cn(
-              "text-xs font-medium px-2 py-0.5 rounded-full",
-              subredditColors[subreddit] ||
-                "bg-surface-container-high text-on-surface-variant"
-            )}
-          >
-            r/{subreddit}
-          </span>
-          <span className="text-xs text-on-surface-variant">
-            {timeAgo(new Date(createdUtc * 1000))}
-          </span>
-          <span className="text-xs text-on-surface-variant">
-            u/{author}
-          </span>
-        </div>
-
-        <h3 className="font-semibold text-primary mb-1.5 group-hover:text-secondary transition-colors line-clamp-2">
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h3
+          className="group-hover:!text-[#ab2c5d] transition-colors"
+          style={{
+            fontSize: "16px",
+            fontWeight: 600,
+            color: "#030612",
+            marginBottom: "6px",
+            lineHeight: 1.4,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
           {titleHe}
         </h3>
 
-        <p className="text-sm text-on-surface-variant line-clamp-2 mb-2">
+        <p
+          style={{
+            fontSize: "14px",
+            color: "#45464c",
+            lineHeight: 1.5,
+            marginBottom: "12px",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
           {summaryHe}
         </p>
 
-        <div className="flex items-center gap-4 text-xs text-on-surface-variant">
-          <span className="flex items-center gap-1">
-            <MessageSquare className="h-3.5 w-3.5" />
-            {numComments} תגובות
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "14px", color: "#45464c" }}>
+          <span style={{ fontWeight: 500, color: "#ab2c5d" }}>r/{subreddit}</span>
+          <span>u/{author}</span>
+          <span>{timeAgo(new Date(createdUtc * 1000))}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <MessageSquare style={{ width: "14px", height: "14px" }} />
+            {numComments}
           </span>
-          <span className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ExternalLink className="h-3.5 w-3.5" />
+          <span
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ display: "flex", alignItems: "center", gap: "4px", marginInlineStart: "auto" }}
+          >
+            <ExternalLink style={{ width: "14px", height: "14px" }} />
             פתח ברדיט
           </span>
         </div>

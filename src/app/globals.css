@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  /* Stitch Design System — Light Theme Only */
   --background: #fbf9f5;
   --foreground: #1b1c1a;
   --surface: #fbf9f5;
@@ -13,37 +14,13 @@
   --secondary: #ab2c5d;
   --secondary-container: #fd6c9c;
   --secondary-fixed: #ffd9e1;
-  --tertiary: #0b0500;
-  --tertiary-container: #281d0b;
   --on-primary: #ffffff;
   --on-surface: #1b1c1a;
   --on-surface-variant: #45464c;
   --outline: #76777c;
   --outline-variant: #c6c6cc;
-  --coral: #e8634a;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #121214;
-    --foreground: #e4e2de;
-    --surface: #121214;
-    --surface-container: #1e1f22;
-    --surface-container-low: #1a1a1d;
-    --surface-container-high: #282a2d;
-    --surface-container-highest: #333538;
-    --primary: #c2c6d8;
-    --primary-container: #2a2f3c;
-    --secondary: #ffb1c5;
-    --secondary-container: #8b0e45;
-    --secondary-fixed: #ffd9e1;
-    --on-primary: #161b28;
-    --on-surface: #e4e2de;
-    --on-surface-variant: #c6c6cc;
-    --outline: #8f909a;
-    --outline-variant: #45464c;
-    --coral: #ff8a75;
-  }
+  --border: #e4e2de;
+  --card-bg: #ffffff;
 }
 
 @theme inline {
@@ -64,25 +41,56 @@
   --color-on-surface-variant: var(--on-surface-variant);
   --color-outline: var(--outline);
   --color-outline-variant: var(--outline-variant);
-  --color-coral: var(--coral);
+  --color-border: var(--border);
+  --color-card: var(--card-bg);
   --font-sans: var(--font-rubik);
+  --font-headline: var(--font-be-vietnam-pro);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-rubik, "Rubik", sans-serif);
-  font-size: 17px;
-  line-height: 1.8;
+  background-color: #fbf9f5;
+  color: #1b1c1a;
+  font-family: var(--font-rubik, 'Rubik', sans-serif);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
 }
 
-/* Hebrew text optimizations */
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, .font-headline {
+  font-family: var(--font-be-vietnam-pro, 'Be Vietnam Pro', var(--font-rubik, 'Rubik', sans-serif));
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #030612;
+  line-height: 1.2;
+  margin: 0;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #030612;
+  line-height: 1.3;
+  margin: 0;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #030612;
   line-height: 1.4;
-  letter-spacing: -0.01em;
+  margin: 0;
 }
 
-/* Embedded English in Hebrew context */
-[dir="ltr"] {
-  unicode-bidi: isolate;
+/* Hide scrollbar utility */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

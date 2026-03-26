@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Lightbulb } from "lucide-react";
 import TipCard from "@/components/cards/TipCard";
 import { useTips } from "@/hooks/useTips";
 import { cn } from "@/lib/utils";
@@ -27,62 +26,59 @@ export default function TipsPage() {
   const { data: tips, isLoading } = useTips(category, difficulty);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
-      <div className="flex items-center gap-3 mb-2">
-        <Lightbulb className="h-7 w-7 text-coral" />
-        <h1 className="text-3xl font-bold text-primary">טיפים וטריקים</h1>
-      </div>
+    <div className="mx-auto max-w-[1200px] px-4 py-12">
+      <h1 className="mb-2">טיפים וטריקים</h1>
       <p className="text-on-surface-variant mb-8">
         איך להפיק את המקסימום מ-Claude
       </p>
 
-      {/* Filters */}
-      <div className="space-y-3 mb-8">
-        <div className="flex gap-2 flex-wrap">
-          {categories.map((cat) => (
-            <button
-              key={cat.value}
-              onClick={() => setCategory(cat.value)}
-              className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-colors",
-                category === cat.value
-                  ? "bg-secondary text-on-primary"
-                  : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-              )}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {difficulties.map((diff) => (
-            <button
-              key={diff.value}
-              onClick={() => setDifficulty(diff.value)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                difficulty === diff.value
-                  ? "bg-primary text-on-primary"
-                  : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-              )}
-            >
-              {diff.label}
-            </button>
-          ))}
-        </div>
+      {/* Category filters */}
+      <div className="flex gap-1 mb-4 border-b border-border">
+        {categories.map((cat) => (
+          <button
+            key={cat.value}
+            onClick={() => setCategory(cat.value)}
+            className={cn(
+              "px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px",
+              category === cat.value
+                ? "border-secondary text-secondary"
+                : "border-transparent text-on-surface-variant hover:text-primary"
+            )}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Difficulty filters */}
+      <div className="flex gap-3 mb-10">
+        {difficulties.map((diff) => (
+          <button
+            key={diff.value}
+            onClick={() => setDifficulty(diff.value)}
+            className={cn(
+              "text-xs font-medium transition-colors",
+              difficulty === diff.value
+                ? "text-primary font-semibold"
+                : "text-on-surface-variant hover:text-primary"
+            )}
+          >
+            {diff.label}
+          </button>
+        ))}
       </div>
 
       {isLoading ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-xl bg-surface-container-low animate-pulse h-48"
+              className="rounded-lg bg-surface-container-low border border-border animate-pulse h-48"
             />
           ))}
         </div>
       ) : tips?.length ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {tips.map((tip) => (
             <TipCard
               key={tip.id}
@@ -95,7 +91,6 @@ export default function TipsPage() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <Lightbulb className="h-12 w-12 text-on-surface-variant/30 mx-auto mb-4" />
           <p className="text-on-surface-variant">אין טיפים עדיין.</p>
         </div>
       )}

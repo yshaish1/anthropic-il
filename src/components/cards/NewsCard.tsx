@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Calendar } from "lucide-react";
 import { cn, formatHebrewDate } from "@/lib/utils";
 
 interface NewsCardProps {
@@ -11,13 +10,6 @@ interface NewsCardProps {
   publishedAt: Date;
   className?: string;
 }
-
-const categoryColors: Record<string, string> = {
-  Product: "bg-secondary-fixed text-secondary",
-  Research: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  Policy: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-  Company: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-};
 
 export default function NewsCard({
   slug,
@@ -31,44 +23,71 @@ export default function NewsCard({
   return (
     <Link
       href={`/news/${slug}`}
-      className={cn(
-        "group block rounded-xl bg-surface-container-low hover:bg-surface-highest transition-all duration-200",
-        className
-      )}
+      className={cn("group block overflow-hidden transition-all duration-300", className)}
+      style={{
+        borderRadius: "8px",
+        backgroundColor: "#ffffff",
+        border: "1px solid #e4e2de",
+      }}
     >
       {imageUrl && (
-        <div className="aspect-[16/9] overflow-hidden rounded-t-xl">
+        <div style={{ height: "200px", overflow: "hidden" }}>
           <img
             src={imageUrl}
             alt={titleHe}
-            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="group-hover:scale-105 transition-transform duration-300"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </div>
       )}
-      <div className="p-5">
-        <div className="flex items-center gap-2 mb-3">
-          {category && (
-            <span
-              className={cn(
-                "text-xs font-medium px-2.5 py-1 rounded-full",
-                categoryColors[category] ||
-                  "bg-surface-container-high text-on-surface-variant"
-              )}
-            >
-              {category}
-            </span>
-          )}
-          <span className="flex items-center gap-1 text-xs text-on-surface-variant">
-            <Calendar className="h-3 w-3" />
-            {formatHebrewDate(publishedAt)}
-          </span>
-        </div>
-        <h3 className="text-lg font-semibold text-primary mb-2 group-hover:text-secondary transition-colors line-clamp-2">
+      <div style={{ padding: "20px" }}>
+        {category && (
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#ab2c5d",
+              textTransform: "uppercase",
+              marginBottom: "8px",
+            }}
+          >
+            {category}
+          </div>
+        )}
+        <h3
+          className="group-hover:!text-[#ab2c5d] transition-colors"
+          style={{
+            fontSize: "18px",
+            fontWeight: 600,
+            color: "#030612",
+            marginBottom: "8px",
+            lineHeight: 1.4,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            fontFamily: "var(--font-be-vietnam-pro, 'Be Vietnam Pro', var(--font-rubik, 'Rubik', sans-serif))",
+          }}
+        >
           {titleHe}
         </h3>
-        <p className="text-sm text-on-surface-variant line-clamp-3">
+        <p
+          style={{
+            fontSize: "14px",
+            color: "#45464c",
+            lineHeight: 1.6,
+            marginBottom: "12px",
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
           {summaryHe}
         </p>
+        <span style={{ fontSize: "12px", color: "#76777c" }}>
+          {formatHebrewDate(publishedAt)}
+        </span>
       </div>
     </Link>
   );

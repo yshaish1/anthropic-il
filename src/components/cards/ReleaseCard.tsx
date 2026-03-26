@@ -12,10 +12,10 @@ interface ReleaseCardProps {
 }
 
 const typeConfig = {
-  model: { label: "מודל", icon: Box, className: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200" },
-  api: { label: "API", icon: Code, className: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200" },
-  pricing: { label: "תמחור", icon: DollarSign, className: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200" },
-  feature: { label: "פיצ'ר", icon: Zap, className: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200" },
+  model: { label: "מודל", icon: Box, color: "#7c3aed" },
+  api: { label: "API", icon: Code, color: "#2563eb" },
+  pricing: { label: "תמחור", icon: DollarSign, color: "#16a34a" },
+  feature: { label: "פיצ'ר", icon: Zap, color: "#ea580c" },
 };
 
 export default function ReleaseCard({
@@ -35,35 +35,62 @@ export default function ReleaseCard({
       href={sourceUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(
-        "group block rounded-xl bg-surface-container-low hover:bg-surface-highest p-5 transition-all duration-200",
-        className
-      )}
+      className={cn("group block transition-all duration-300", className)}
+      style={{
+        borderRadius: "8px",
+        backgroundColor: "#ffffff",
+        border: "1px solid #e4e2de",
+        padding: "20px",
+      }}
     >
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span
-          className={cn(
-            "flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full",
-            config.className
-          )}
-        >
-          <Icon className="h-3 w-3" />
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+        <Icon style={{ width: "16px", height: "16px", color: config.color }} />
+        <span style={{ fontSize: "12px", fontWeight: 600, color: config.color, textTransform: "uppercase" }}>
           {config.label}
         </span>
         {version && (
-          <span className="text-xs font-mono font-medium text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">
+          <span
+            style={{
+              fontSize: "12px",
+              fontFamily: "monospace",
+              fontWeight: 500,
+              color: "#45464c",
+              backgroundColor: "#f5f3ef",
+              padding: "2px 8px",
+              borderRadius: "4px",
+            }}
+          >
             {version}
           </span>
         )}
-        <span className="text-xs text-on-surface-variant ms-auto">
+        <span style={{ fontSize: "12px", color: "#76777c", marginInlineStart: "auto" }}>
           {formatHebrewDate(publishedAt)}
         </span>
       </div>
 
-      <h3 className="font-semibold text-primary mb-2 group-hover:text-secondary transition-colors">
+      <h3
+        className="group-hover:!text-[#ab2c5d] transition-colors"
+        style={{
+          fontSize: "18px",
+          fontWeight: 600,
+          color: "#030612",
+          marginBottom: "8px",
+          fontFamily: "var(--font-be-vietnam-pro, 'Be Vietnam Pro', var(--font-rubik, 'Rubik', sans-serif))",
+        }}
+      >
         {titleHe}
       </h3>
-      <p className="text-sm text-on-surface-variant line-clamp-3">
+      <p
+        style={{
+          fontSize: "14px",
+          color: "#45464c",
+          lineHeight: 1.7,
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
         {summaryHe}
       </p>
     </a>

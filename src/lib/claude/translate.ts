@@ -20,7 +20,7 @@ export async function translateArticle(
   body: string
 ): Promise<ArticleTranslation> {
   const message = await client.messages.create({
-    model: "claude-sonnet-4-6-20250514",
+    model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
     messages: [
       {
@@ -65,7 +65,7 @@ export async function translateRedditPost(
   selfText: string
 ): Promise<RedditTranslation> {
   const message = await client.messages.create({
-    model: "claude-sonnet-4-6-20250514",
+    model: "claude-sonnet-4-20250514",
     max_tokens: 1024,
     messages: [
       {

@@ -10,9 +10,9 @@ interface TipCardProps {
 }
 
 const difficultyConfig = {
-  beginner: { label: "מתחיל", className: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200" },
-  intermediate: { label: "בינוני", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200" },
-  advanced: { label: "מתקדם", className: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200" },
+  beginner: { label: "מתחיל", color: "#16a34a" },
+  intermediate: { label: "בינוני", color: "#ca8a04" },
+  advanced: { label: "מתקדם", color: "#dc2626" },
 };
 
 const categoryConfig = {
@@ -35,30 +35,46 @@ export default function TipCard({
 
   return (
     <div
-      className={cn(
-        "rounded-xl bg-surface-container-low p-5 transition-all duration-200 hover:bg-surface-highest",
-        className
-      )}
+      className={cn("transition-all duration-300", className)}
+      style={{
+        borderRadius: "8px",
+        backgroundColor: "#ffffff",
+        border: "1px solid #e4e2de",
+        padding: "20px",
+      }}
     >
-      <div className="flex items-center gap-2 mb-3">
-        <div className="p-2 rounded-lg bg-surface-container-high">
-          <Icon className="h-4 w-4 text-coral" />
-        </div>
-        <span className="text-xs font-medium text-on-surface-variant">
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+        <Icon style={{ width: "20px", height: "20px", color: "#ab2c5d" }} />
+        <span style={{ fontSize: "12px", fontWeight: 600, color: "#ab2c5d", textTransform: "uppercase" }}>
           {cat.label}
         </span>
-        <span
-          className={cn(
-            "text-xs font-medium px-2 py-0.5 rounded-full ms-auto",
-            diff.className
-          )}
-        >
+        <span style={{ fontSize: "12px", fontWeight: 600, color: diff.color, textTransform: "uppercase", marginInlineStart: "auto" }}>
           {diff.label}
         </span>
       </div>
 
-      <h3 className="font-semibold text-primary mb-2">{titleHe}</h3>
-      <p className="text-sm text-on-surface-variant line-clamp-4">
+      <h3
+        style={{
+          fontSize: "18px",
+          fontWeight: 600,
+          color: "#030612",
+          marginBottom: "8px",
+          fontFamily: "var(--font-be-vietnam-pro, 'Be Vietnam Pro', var(--font-rubik, 'Rubik', sans-serif))",
+        }}
+      >
+        {titleHe}
+      </h3>
+      <p
+        style={{
+          fontSize: "14px",
+          color: "#45464c",
+          lineHeight: 1.7,
+          display: "-webkit-box",
+          WebkitLineClamp: 4,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
         {contentHe}
       </p>
     </div>
