@@ -82,10 +82,10 @@ export default function ReleasesPage() {
       <div className="mx-auto max-w-6xl px-6">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-5xl md:text-7xl font-black text-primary mb-3">
+          <h1 className="headline-font text-5xl md:text-7xl font-black text-primary mb-3">
             עדכונים ושחרורים
           </h1>
-          <p className="text-lg text-on-surface-variant">
+          <p className="text-lg text-muted">
             מעקב אחרי כל השינויים בעולם Claude ו-Anthropic
           </p>
         </div>
@@ -99,8 +99,8 @@ export default function ReleasesPage() {
               className={cn(
                 "px-5 py-2.5 rounded-full text-sm font-medium transition-all",
                 type === filter.value
-                  ? "bg-secondary text-white shadow-sm"
-                  : "bg-card border border-outline-variant/20 text-on-surface-variant hover:border-secondary hover:text-secondary"
+                  ? "bg-accent text-white shadow-sm"
+                  : "bg-card border-2 border-slate-200 text-muted hover:border-accent hover:text-accent"
               )}
             >
               {filter.label}
@@ -124,7 +124,7 @@ export default function ReleasesPage() {
             ) : releases?.length ? (
               <div className="relative">
                 {/* Vertical timeline line */}
-                <div className="absolute right-5 top-0 bottom-0 w-px bg-outline-variant/30" />
+                <div className="absolute right-5 top-0 bottom-0 w-px bg-slate-200" />
 
                 <div className="space-y-8">
                   {releases.map((release) => {
@@ -146,7 +146,7 @@ export default function ReleasesPage() {
                         </div>
 
                         {/* Content card */}
-                        <div className="flex-1 bg-card rounded-xl p-8 border border-outline-variant/10 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex-1 bg-card rounded-xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all">
                           {/* Meta row */}
                           <div className="flex flex-wrap items-center gap-3 mb-4">
                             <span
@@ -158,11 +158,11 @@ export default function ReleasesPage() {
                               {config.label}
                             </span>
                             {release.version && (
-                              <span className="px-2.5 py-0.5 rounded bg-surface-container-low text-xs font-mono font-medium text-on-surface-variant">
+                              <span className="px-2.5 py-0.5 rounded bg-slate-100 text-xs font-mono font-medium text-muted">
                                 {release.version}
                               </span>
                             )}
-                            <span className="text-xs text-on-surface-variant ms-auto">
+                            <span className="text-xs text-muted ms-auto">
                               {formatHebrewDate(release.publishedAt.toDate())}
                             </span>
                           </div>
@@ -173,7 +173,7 @@ export default function ReleasesPage() {
                           </h3>
 
                           {/* Summary */}
-                          <p className="text-sm text-on-surface-variant leading-relaxed mb-4">
+                          <p className="text-sm text-muted leading-relaxed mb-4">
                             {release.summaryHe}
                           </p>
 
@@ -183,7 +183,7 @@ export default function ReleasesPage() {
                               href={release.sourceUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-sm font-medium text-secondary hover:underline"
+                              className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                               קרא במקור
@@ -197,7 +197,7 @@ export default function ReleasesPage() {
               </div>
             ) : (
               <div className="text-center py-20">
-                <p className="text-on-surface-variant text-lg">
+                <p className="text-muted text-lg">
                   אין עדכונים עדיין.
                 </p>
               </div>
@@ -208,14 +208,14 @@ export default function ReleasesPage() {
           <aside className="lg:col-span-4">
             <div className="lg:sticky lg:top-24 space-y-6">
               {/* Newsletter signup */}
-              <div className="bg-card rounded-xl p-6 border border-outline-variant/10 shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center mb-4">
-                  <Mail className="h-5 w-5 text-secondary" />
+              <div className="bg-card rounded-xl p-6 border border-slate-100 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
+                  <Mail className="h-5 w-5 text-accent" />
                 </div>
                 <h3 className="text-lg font-bold text-primary mb-2">
                   הישארו מעודכנים
                 </h3>
-                <p className="text-sm text-on-surface-variant mb-4">
+                <p className="text-sm text-muted mb-4">
                   קבלו עדכון שבועי על כל השינויים החשובים ישירות למייל.
                 </p>
                 <div className="flex gap-2">
@@ -223,16 +223,16 @@ export default function ReleasesPage() {
                     type="email"
                     placeholder="your@email.com"
                     dir="ltr"
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/20 text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:border-secondary"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-sm placeholder:text-muted/50 focus:outline-none focus:border-accent"
                   />
-                  <button className="px-4 py-2.5 bg-secondary text-white rounded-xl text-sm font-medium hover:bg-secondary/90 transition-colors whitespace-nowrap">
+                  <button className="px-4 py-2.5 bg-accent text-white rounded-xl text-sm font-medium hover:bg-accent/90 transition-colors whitespace-nowrap">
                     הרשמה
                   </button>
                 </div>
               </div>
 
               {/* Resources */}
-              <div className="bg-card rounded-xl p-6 border border-outline-variant/10 shadow-sm">
+              <div className="bg-card rounded-xl p-6 border border-slate-100 shadow-sm">
                 <h3 className="text-lg font-bold text-primary mb-4">
                   קישורים שימושיים
                 </h3>
@@ -243,7 +243,7 @@ export default function ReleasesPage() {
                         href={r.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-secondary transition-colors"
+                        className="flex items-center gap-2 text-sm text-muted hover:text-accent transition-colors"
                       >
                         <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                         {r.label}

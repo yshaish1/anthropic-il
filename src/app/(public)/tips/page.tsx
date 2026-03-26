@@ -69,8 +69,8 @@ const categoryConfig: Record<
   general: {
     label: "כללי",
     icon: Zap,
-    iconBg: "bg-secondary/10",
-    iconColor: "text-secondary",
+    iconBg: "bg-accent/10",
+    iconColor: "text-accent",
   },
 };
 
@@ -84,10 +84,10 @@ export default function TipsPage() {
       <div className="mx-auto max-w-6xl px-6">
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-5xl md:text-6xl font-black text-primary mb-3">
+          <h1 className="headline-font text-5xl md:text-6xl font-black text-primary mb-3">
             טיפים וטריקים
           </h1>
-          <p className="text-lg text-on-surface-variant">
+          <p className="text-lg text-muted">
             כלים, טכניקות ומדריכים לעבודה מיטבית עם Claude
           </p>
         </div>
@@ -101,8 +101,8 @@ export default function TipsPage() {
               className={cn(
                 "px-5 py-2.5 rounded-full text-sm font-medium transition-all",
                 category === cat.value
-                  ? "bg-secondary text-white shadow-sm"
-                  : "bg-card border border-outline-variant/20 text-on-surface-variant hover:border-secondary hover:text-secondary"
+                  ? "bg-accent text-white shadow-sm"
+                  : "bg-card border-2 border-slate-200 text-muted hover:border-accent hover:text-accent"
               )}
             >
               {cat.label}
@@ -112,7 +112,7 @@ export default function TipsPage() {
 
         {/* Difficulty legend + filter */}
         <div className="flex flex-wrap items-center gap-6 mb-10">
-          <span className="text-sm text-on-surface-variant font-medium">
+          <span className="text-sm text-muted font-medium">
             רמת קושי:
           </span>
           {difficulties.map((diff) => {
@@ -125,7 +125,7 @@ export default function TipsPage() {
                   "flex items-center gap-2 text-sm transition-all",
                   difficulty === diff.value
                     ? "font-bold text-primary"
-                    : "text-on-surface-variant hover:text-primary"
+                    : "text-muted hover:text-primary"
                 )}
               >
                 {config && (
@@ -159,7 +159,7 @@ export default function TipsPage() {
               return (
                 <div
                   key={tip.id}
-                  className="group p-8 rounded-xl bg-card border border-outline-variant/10 shadow-sm hover:shadow-md transition-all duration-300 min-h-[280px] flex flex-col justify-between"
+                  className="group p-8 rounded-xl bg-card border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 min-h-[280px] flex flex-col justify-between"
                 >
                   <div>
                     {/* Top row: icon + difficulty */}
@@ -167,13 +167,13 @@ export default function TipsPage() {
                       <div
                         className={cn(
                           "w-10 h-10 rounded-xl flex items-center justify-center",
-                          cat?.iconBg || "bg-surface-container-low"
+                          cat?.iconBg || "bg-slate-100"
                         )}
                       >
                         <Icon
                           className={cn(
                             "h-5 w-5",
-                            cat?.iconColor || "text-secondary"
+                            cat?.iconColor || "text-accent"
                           )}
                         />
                       </div>
@@ -196,14 +196,14 @@ export default function TipsPage() {
                     </h3>
 
                     {/* Description */}
-                    <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-4">
+                    <p className="text-sm text-muted leading-relaxed line-clamp-4">
                       {tip.contentHe}
                     </p>
                   </div>
 
                   {/* Read more */}
                   <div className="mt-6">
-                    <span className="text-secondary font-bold text-sm group-hover:underline cursor-pointer">
+                    <span className="text-accent font-bold text-sm group-hover:underline cursor-pointer">
                       קרא עוד &larr;
                     </span>
                   </div>
@@ -213,7 +213,7 @@ export default function TipsPage() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <p className="text-on-surface-variant text-lg">
+            <p className="text-muted text-lg">
               אין טיפים עדיין.
             </p>
           </div>

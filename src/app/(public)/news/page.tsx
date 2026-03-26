@@ -14,8 +14,8 @@ const categories = [
 ];
 
 const categoryColors: Record<string, string> = {
-  Product: "bg-secondary text-white",
-  Research: "bg-primary text-on-primary",
+  Product: "bg-accent text-white",
+  Research: "bg-primary text-white",
   Policy: "bg-amber-500 text-white",
   Company: "bg-emerald-600 text-white",
 };
@@ -37,11 +37,11 @@ export default function NewsPage() {
       <div className="mx-auto max-w-6xl px-6">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-5xl md:text-6xl font-black text-primary mb-3">
+          <h1 className="headline-font text-5xl md:text-6xl font-black text-primary mb-3">
             חדשות
           </h1>
-          <div className="h-1.5 w-12 bg-secondary rounded-full mb-4" />
-          <p className="text-lg text-on-surface-variant">
+          <div className="h-1.5 w-12 bg-accent rounded-full mb-4" />
+          <p className="text-lg text-muted">
             כל החדשות והעדכונים מ-Anthropic בתרגום לעברית
           </p>
         </div>
@@ -58,8 +58,8 @@ export default function NewsPage() {
               className={cn(
                 "px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all",
                 category === cat.value
-                  ? "bg-secondary text-white shadow-sm"
-                  : "bg-card border border-outline-variant/20 text-on-surface-variant hover:border-secondary hover:text-secondary"
+                  ? "bg-accent text-white shadow-sm"
+                  : "bg-card border-2 border-slate-200 text-muted hover:border-accent hover:text-accent"
               )}
             >
               {cat.label}
@@ -73,13 +73,13 @@ export default function NewsPage() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-xl bg-card border border-outline-variant/10 animate-pulse"
+                className="rounded-xl bg-card border border-slate-100 animate-pulse"
               >
-                <div className="aspect-video bg-surface-container-low rounded-t-xl" />
+                <div className="aspect-video bg-slate-100 rounded-t-xl" />
                 <div className="p-5 space-y-3">
-                  <div className="h-3 bg-surface-container-low rounded w-1/4" />
-                  <div className="h-5 bg-surface-container-low rounded w-3/4" />
-                  <div className="h-4 bg-surface-container-low rounded w-full" />
+                  <div className="h-3 bg-slate-100 rounded w-1/4" />
+                  <div className="h-5 bg-slate-100 rounded w-3/4" />
+                  <div className="h-4 bg-slate-100 rounded w-full" />
                 </div>
               </div>
             ))}
@@ -91,7 +91,7 @@ export default function NewsPage() {
                 <Link
                   key={article.id}
                   href={`/news/${article.slug}`}
-                  className="group bg-card rounded-xl shadow-sm hover:shadow-md border border-outline-variant/10 overflow-hidden transition-all duration-300"
+                  className="group bg-card rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-2 border border-slate-100 overflow-hidden transition-all duration-300"
                 >
                   {/* Image */}
                   <div className="relative aspect-video overflow-hidden">
@@ -102,7 +102,7 @@ export default function NewsPage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full bg-surface-container-low" />
+                      <div className="w-full h-full bg-slate-100" />
                     )}
                     {/* Category badge */}
                     {article.category && (
@@ -110,7 +110,7 @@ export default function NewsPage() {
                         className={cn(
                           "absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold",
                           categoryColors[article.category] ||
-                            "bg-secondary text-white"
+                            "bg-accent text-white"
                         )}
                       >
                         {article.category}
@@ -120,13 +120,13 @@ export default function NewsPage() {
 
                   {/* Content */}
                   <div className="p-5">
-                    <span className="text-xs text-on-surface-variant">
+                    <span className="text-xs text-muted">
                       {formatHebrewDate(article.publishedAt.toDate())}
                     </span>
-                    <h3 className="text-xl font-bold text-primary mt-2 mb-2 leading-snug group-hover:text-secondary transition-colors line-clamp-2">
+                    <h3 className="text-xl font-bold text-primary mt-2 mb-2 leading-snug group-hover:text-accent transition-colors line-clamp-2">
                       {article.titleHe}
                     </h3>
-                    <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-2">
+                    <p className="text-sm text-muted leading-relaxed line-clamp-2">
                       {article.summaryHe}
                     </p>
                   </div>
@@ -140,7 +140,7 @@ export default function NewsPage() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="w-10 h-10 rounded-full bg-card border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-low disabled:opacity-30 transition-all flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-card border border-slate-200 text-muted hover:bg-slate-100 disabled:opacity-30 transition-all flex items-center justify-center"
                 >
                   &rsaquo;
                 </button>
@@ -151,8 +151,8 @@ export default function NewsPage() {
                     className={cn(
                       "w-10 h-10 rounded-full text-sm font-medium transition-all flex items-center justify-center",
                       page === i + 1
-                        ? "bg-secondary text-white"
-                        : "bg-card border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-low"
+                        ? "bg-accent text-white"
+                        : "bg-card border border-slate-200 text-muted hover:bg-slate-100"
                     )}
                   >
                     {i + 1}
@@ -161,7 +161,7 @@ export default function NewsPage() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="w-10 h-10 rounded-full bg-card border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-low disabled:opacity-30 transition-all flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-card border border-slate-200 text-muted hover:bg-slate-100 disabled:opacity-30 transition-all flex items-center justify-center"
                 >
                   &lsaquo;
                 </button>
@@ -170,7 +170,7 @@ export default function NewsPage() {
           </>
         ) : (
           <div className="text-center py-20">
-            <p className="text-on-surface-variant text-lg">
+            <p className="text-muted text-lg">
               אין חדשות עדיין. בצע שליפה ראשונה מלוח הבקרה.
             </p>
           </div>
