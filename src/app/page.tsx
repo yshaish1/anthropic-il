@@ -52,9 +52,6 @@ export default function HomePage() {
                 alt="AI neural network visualization"
               />
             </div>
-            <div className="absolute -bottom-4 -right-4 bg-secondary-fixed text-on-surface-variant p-6 rounded-xl font-bold text-lg shadow-xl rotate-3">
-              מעודכן ל-2026
-            </div>
           </div>
         </div>
       </section>
@@ -225,13 +222,12 @@ export default function HomePage() {
                 <div className="md:w-1/3 aspect-square rounded-2xl overflow-hidden bg-surface-container" />
                 <div className="md:w-2/3 p-6">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold mb-4 inline-block ${
-                      tip.difficulty === "beginner"
-                        ? "bg-green-100 text-green-800"
-                        : tip.difficulty === "advanced"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-yellow-100 text-yellow-800"
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-bold mb-4 inline-block ${tip.difficulty === "beginner"
+                      ? "bg-green-100 text-green-800"
+                      : tip.difficulty === "advanced"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-yellow-100 text-yellow-800"
+                      }`}
                   >
                     {tip.difficulty === "beginner" ? "מתחילים" : tip.difficulty === "advanced" ? "מתקדמים" : "בינוניים"}
                   </span>

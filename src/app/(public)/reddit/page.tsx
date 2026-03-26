@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import RedditCard from "@/components/cards/RedditCard";
+import { ArrowUp, MessageSquare, ExternalLink } from "lucide-react";
 import { useRedditPosts } from "@/hooks/useRedditPosts";
-import { cn } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 
 const tabs = [
   { value: "all", label: "הכל" },
@@ -11,65 +11,165 @@ const tabs = [
   { value: "anthropic", label: "r/anthropic" },
 ];
 
+const sortOptions = [
+  { value: "popular", label: "פופולרי" },
+  { value: "new", label: "חדש" },
+];
+
+const subredditColors: Record<string, string> = {
+  ClaudeAI: "border-secondary",
+  anthropic: "border-primary-container",
+};
+
 export default function RedditPage() {
   const [subreddit, setSubreddit] = useState("all");
+  const [sort, setSort] = useState("popular");
+  const [visibleCount, setVisibleCount] = useState(10);
   const { data: posts, isLoading } = useRedditPosts(subreddit);
 
+  const sortedPosts = posts
+    ? [...posts].sort((a, b) =>
+        sort === "new" ? b.createdUtc - a.createdUtc : b.score - a.score
+      )
+    : [];
+
+  const visiblePosts = sortedPosts.slice(0, visibleCount);
+
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-12">
-      <h1 className="mb-2">רדיט</h1>
-      <p className="text-on-surface-variant mb-8">
-        פוסטים נבחרים מ-r/ClaudeAI ו-r/anthropic
-      </p>
+    <main className="pt-16 pb-32">
+      <div className="mx-auto max-w-6xl px-6">
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-5xl md:text-6xl font-black text-primary mb-3">
+            רדיט
+          </h1>
+          <p className="text-lg text-on-surface-variant">
+            פוסטים נבחרים מ-r/ClaudeAI ו-r/anthropic
+          </p>
+        </div>
 
-      {/* Tab filters */}
-      <div className="flex gap-1 mb-10 border-b border-border">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setSubreddit(tab.value)}
-            className={cn(
-              "px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px",
-              subreddit === tab.value
-                ? "border-secondary text-secondary"
-                : "border-transparent text-on-surface-variant hover:text-primary"
+        {/* Filter row */}
+        <div className="flex flex-wrap items-center gap-4 mb-10">
+          {/* Tab pills */}
+          <div className="flex bg-surface-container-low rounded-full p-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setSubreddit(tab.value)}
+                className={cn(
+                  "px-5 py-2 rounded-full text-sm font-medium transition-all",
+                  subreddit === tab.value
+                    ? "bg-primary text-on-primary shadow-sm"
+                    : "text-on-surface-variant hover:text-primary"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort dropdown */}
+          <div className="flex bg-card rounded-xl p-1 border border-outline-variant/20 ms-auto">
+            {sortOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setSort(opt.value)}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-sm font-medium transition-all",
+                  sort === opt.value
+                    ? "bg-surface-container-low text-primary"
+                    : "text-on-surface-variant hover:text-primary"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Posts */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-card p-6 rounded-xl border border-outline-variant/10 animate-pulse h-36"
+              />
+            ))}
+          </div>
+        ) : visiblePosts.length ? (
+          <>
+            <div className="space-y-4">
+              {visiblePosts.map((post) => (
+                <a
+                  key={post.id}
+                  href={post.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "group flex gap-5 bg-card p-6 rounded-xl shadow-sm hover:shadow-md border border-outline-variant/10 border-r-4 transition-all duration-300",
+                    subredditColors[post.subreddit] || "border-r-secondary"
+                  )}
+                >
+                  {/* Score */}
+                  <div className="flex flex-col items-center min-w-[48px] gap-1">
+                    <ArrowUp className="h-4 w-4 text-secondary" />
+                    <span className="text-lg font-bold text-primary">
+                      {post.score}
+                    </span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Subreddit badge */}
+                    <span className="inline-block bg-secondary text-white rounded-full px-2.5 py-0.5 text-[10px] uppercase font-bold tracking-wide mb-2">
+                      r/{post.subreddit}
+                    </span>
+
+                    <h3 className="text-xl font-bold text-primary mb-2 leading-snug group-hover:text-secondary transition-colors line-clamp-2">
+                      {post.titleHe}
+                    </h3>
+                    <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-3 mb-3">
+                      {post.summaryHe}
+                    </p>
+
+                    {/* Footer */}
+                    <div className="flex items-center gap-4 text-sm text-on-surface-variant">
+                      <span className="flex items-center gap-1.5">
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        {post.numComments} תגובות
+                      </span>
+                      <span>{timeAgo(new Date(post.createdUtc * 1000))}</span>
+                      <span className="flex items-center gap-1.5 ms-auto text-secondary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        פתח ברדיט
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            {/* Load more */}
+            {visibleCount < sortedPosts.length && (
+              <div className="flex justify-center mt-10">
+                <button
+                  onClick={() => setVisibleCount((c) => c + 10)}
+                  className="px-8 py-3 bg-primary text-on-primary rounded-full font-medium hover:bg-primary-container transition-colors"
+                >
+                  טען עוד פוסטים
+                </button>
+              </div>
             )}
-          >
-            {tab.label}
-          </button>
-        ))}
+          </>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-on-surface-variant text-lg">
+              אין פוסטים עדיין.
+            </p>
+          </div>
+        )}
       </div>
-
-      {isLoading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="border-b border-border animate-pulse h-24"
-            />
-          ))}
-        </div>
-      ) : posts?.length ? (
-        <div>
-          {posts.map((post) => (
-            <RedditCard
-              key={post.id}
-              titleHe={post.titleHe}
-              summaryHe={post.summaryHe}
-              subreddit={post.subreddit}
-              score={post.score}
-              numComments={post.numComments}
-              author={post.author}
-              createdUtc={post.createdUtc}
-              url={post.url}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16">
-          <p className="text-on-surface-variant">אין פוסטים עדיין.</p>
-        </div>
-      )}
-    </div>
+    </main>
   );
 }
