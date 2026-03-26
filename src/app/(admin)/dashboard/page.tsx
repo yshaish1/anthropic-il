@@ -12,7 +12,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from "firebase/auth";
-import { auth, db } from "@/lib/firebase/config";
+import { getClientAuth, getClientDb } from "@/lib/firebase/config";
 import { doc, getDoc, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import { cn } from "@/lib/utils";
@@ -37,11 +37,11 @@ export default function DashboardPage() {
   const [fetchLogs, setFetchLogs] = useState<FetchLogEntry[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+    const unsubscribe = onAuthStateChanged(getClientAuth(), async (u) => {
       setUser(u);
       if (u) {
         const adminDoc = await getDoc(
-          doc(db, COLLECTIONS.ADMINS, u.uid)
+          doc(getClientDb(), COLLECTIONS.ADMINS, u.uid)
         );
         setIsAdmin(adminDoc.exists());
       } else {
@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
   async function loadFetchLogs() {
     const q = query(
-      collection(db, COLLECTIONS.FETCH_LOGS),
+      collection(getClientDb(), COLLECTIONS.FETCH_LOGS),
       orderBy("completedAt", "desc"),
       limit(10)
     );
@@ -71,7 +71,7 @@ export default function DashboardPage() {
 
   async function handleSignIn() {
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      await signInWithPopup(getClientAuth(), new GoogleAuthProvider());
     } catch (err) {
       toast.error("שגיאה בהתחברות");
     }

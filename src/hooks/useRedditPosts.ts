@@ -9,7 +9,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { getClientDb } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import type { RedditPost } from "@/types";
 
@@ -20,6 +20,7 @@ export function useRedditPosts(
   return useQuery({
     queryKey: ["reddit", subreddit, count],
     queryFn: async () => {
+      const db = getClientDb();
       let q = query(
         collection(db, COLLECTIONS.REDDIT_POSTS),
         where("curated", "==", true),

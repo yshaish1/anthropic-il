@@ -9,7 +9,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { getClientDb } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import type { ReleaseNote } from "@/types";
 
@@ -17,6 +17,7 @@ export function useReleases(type?: string, count: number = 20) {
   return useQuery({
     queryKey: ["releases", type, count],
     queryFn: async () => {
+      const db = getClientDb();
       let q = query(
         collection(db, COLLECTIONS.RELEASES),
         orderBy("publishedAt", "desc"),

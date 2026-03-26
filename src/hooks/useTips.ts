@@ -8,7 +8,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { getClientDb } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import type { Tip } from "@/types";
 
@@ -16,6 +16,7 @@ export function useTips(category?: string, difficulty?: string) {
   return useQuery({
     queryKey: ["tips", category, difficulty],
     queryFn: async () => {
+      const db = getClientDb();
       const constraints = [
         where("published", "==", true),
         orderBy("order"),

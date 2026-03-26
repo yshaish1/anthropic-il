@@ -11,7 +11,7 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { getClientDb } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import type { Article } from "@/types";
 
@@ -19,6 +19,7 @@ export function useNews(category?: string, count: number = 20) {
   return useQuery({
     queryKey: ["news", category, count],
     queryFn: async () => {
+      const db = getClientDb();
       let q = query(
         collection(db, COLLECTIONS.ARTICLES),
         orderBy("publishedAt", "desc"),
@@ -46,6 +47,7 @@ export function useArticle(slug: string) {
   return useQuery({
     queryKey: ["article", slug],
     queryFn: async () => {
+      const db = getClientDb();
       const docRef = doc(db, COLLECTIONS.ARTICLES, slug);
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) return null;

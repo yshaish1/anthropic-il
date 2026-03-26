@@ -11,12 +11,16 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-function getFirebaseApp(): FirebaseApp {
-  return getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-}
-
+let _app: FirebaseApp | null = null;
 let _auth: Auth | null = null;
 let _db: Firestore | null = null;
+
+function getFirebaseApp(): FirebaseApp {
+  if (!_app) {
+    _app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  }
+  return _app;
+}
 
 export function getClientAuth(): Auth {
   if (!_auth) _auth = getAuth(getFirebaseApp());
@@ -27,18 +31,3 @@ export function getClientDb(): Firestore {
   if (!_db) _db = getFirestore(getFirebaseApp());
   return _db;
 }
-
-// Backwards compat exports - lazily evaluated via Proxy
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const auth = new Proxy({} as Auth, {
-  get(_, prop) {
-    return (getClientAuth() as any)[prop];
-  },
-});
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const db = new Proxy({} as Firestore, {
-  get(_, prop) {
-    return (getClientDb() as any)[prop];
-  },
-});
