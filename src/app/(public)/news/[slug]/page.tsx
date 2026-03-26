@@ -1,224 +1,153 @@
 "use client";
 
-import { use } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-  Calendar,
-  Clock,
-  Share2,
-  ExternalLink,
-  ArrowRight,
-} from "lucide-react";
-import { useArticle, useNews } from "@/hooks/useNews";
+import { useArticle } from "@/hooks/useNews";
 import { formatHebrewDate } from "@/lib/utils";
 
-export default function ArticlePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = use(params);
-  const { data: article, isLoading } = useArticle(slug);
-  const { data: relatedArticles } = useNews(undefined, 4);
+const CATEGORY_LABELS: Record<string, string> = {
+  product: "מוצר",
+  research: "מחקר",
+  policy: "מדיניות",
+  company: "חברה",
+};
 
-  // Filter out current article from related
-  const related = relatedArticles?.filter((a) => a.slug !== slug)?.slice(0, 3);
+export default function ArticlePage() {
+  const params = useParams();
+  const slug = params?.slug as string;
+  const { data: article, isLoading } = useArticle(slug);
 
   if (isLoading) {
     return (
-      <main className="pt-16 pb-32">
-        <div className="mx-auto max-w-3xl px-6">
-          <div className="animate-pulse space-y-6">
-            <div className="h-6 bg-slate-100 rounded-full w-24" />
-            <div className="h-12 bg-slate-100 rounded w-3/4" />
-            <div className="h-5 bg-slate-100 rounded w-1/3" />
-            <div className="aspect-[16/9] bg-slate-100 rounded-xl" />
-            <div className="space-y-3 mt-8">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-4 bg-slate-100 rounded"
-                />
-              ))}
-            </div>
+      <div className="pt-12 pb-20 px-6">
+        <div className="max-w-[800px] mx-auto space-y-6">
+          <div className="h-12 bg-white rounded-lg animate-pulse w-3/4" />
+          <div className="h-6 bg-white rounded animate-pulse w-1/2" />
+          <div className="aspect-[16/9] bg-white rounded-2xl animate-pulse" />
+          <div className="space-y-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-5 bg-white rounded animate-pulse" />
+            ))}
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (!article) {
     return (
-      <main className="pt-16 pb-32">
-        <div className="mx-auto max-w-3xl px-6 text-center py-20">
-          <h1 className="headline-font text-4xl font-black text-primary mb-4">
-            הכתבה לא נמצאה
-          </h1>
+      <div className="pt-12 pb-20 px-6 text-center">
+        <span className="material-symbols-outlined text-6xl text-muted mb-4 block">
+          error
+        </span>
+        <h1 className="text-3xl font-bold headline-font text-primary mb-4">
+          הכתבה לא נמצאה
+        </h1>
+        <Link
+          href="/news"
+          className="text-accent font-bold hover:underline"
+        >
+          חזרה לחדשות
+        </Link>
+      </div>
+    );
+  }
+
+  const date = article.publishedAt?.toDate
+    ? article.publishedAt.toDate()
+    : new Date();
+
+  return (
+    <div className="pt-12 pb-20 px-6">
+      <article className="max-w-[800px] mx-auto">
+        {/* Breadcrumb */}
+        <div className="mb-8">
           <Link
             href="/news"
-            className="text-accent font-medium hover:underline"
+            className="inline-flex items-center px-4 py-1.5 bg-accent/10 text-accent rounded-full text-sm font-bold hover:bg-accent/20 transition-colors"
           >
+            <span className="ml-2">&larr;</span>
             חזרה לחדשות
           </Link>
         </div>
-      </main>
-    );
-  }
 
-  const readTime = Math.max(
-    1,
-    Math.ceil((article.bodyHe?.length || 0) / 800)
-  );
-
-  function handleShare() {
-    if (navigator.share) {
-      navigator.share({
-        title: article!.titleHe,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-    }
-  }
-
-  function handleTwitterShare() {
-    window.open(
-      `https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(article!.titleHe)}`,
-      "_blank"
-    );
-  }
-
-  return (
-    <main className="pt-16 pb-32">
-      <div className="mx-auto max-w-3xl px-6">
-        {/* Breadcrumb badge */}
-        <Link
-          href="/news"
-          className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-pink-50 text-accent rounded-full text-sm font-medium mb-8 hover:bg-accent/10 transition-colors"
-        >
-          <ArrowRight className="h-3.5 w-3.5" />
-          חזרה לחדשות
-        </Link>
-
-        <article>
-          {/* Title */}
-          <h1 className="headline-font text-4xl md:text-5xl font-black text-primary mb-6 leading-[1.1]">
+        {/* Title Section */}
+        <header className="mb-8">
+          <h1 className="text-[48px] headline-font font-black text-primary leading-[1.1] tracking-tight mb-6">
             {article.titleHe}
           </h1>
-
-          {/* Meta */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted mb-8">
-            {article.category && (
-              <span className="px-3 py-1 rounded-full bg-accent text-white text-xs font-bold">
-                {article.category}
+          <div className="flex flex-wrap items-center gap-6 text-muted text-sm font-medium">
+            <span className="px-3 py-1 bg-accent text-white rounded-full text-xs font-bold">
+              {CATEGORY_LABELS[article.category] || article.category}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-accent text-[20px]">
+                calendar_today
               </span>
-            )}
-            <span className="flex items-center gap-1.5">
-              <Calendar className="h-4 w-4" />
-              {formatHebrewDate(article.publishedAt.toDate())}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
-              {readTime} דק&apos; קריאה
-            </span>
-          </div>
-
-          {/* Hero Image */}
-          {article.imageUrl && (
-            <div className="aspect-[16/9] rounded-xl overflow-hidden mb-10">
-              <img
-                src={article.imageUrl}
-                alt={article.titleHe}
-                className="w-full h-full object-cover"
-              />
+              <span>{formatHebrewDate(date)}</span>
             </div>
-          )}
-
-          {/* Summary callout */}
-          <div className="p-8 bg-slate-100 rounded-xl border-r-4 border-accent mb-10">
-            <p className="text-primary leading-relaxed text-lg">
-              {article.summaryHe}
-            </p>
           </div>
+        </header>
 
-          {/* Body */}
-          <div className="text-base text-primary leading-[1.8] whitespace-pre-line mb-12">
-            {article.bodyHe}
+        {/* Hero Image */}
+        {article.imageUrl && (
+          <figure className="mb-12">
+            <img
+              alt={article.titleHe}
+              className="w-full aspect-[16/9] object-cover rounded-2xl shadow-xl"
+              src={article.imageUrl}
+            />
+          </figure>
+        )}
+
+        {/* Callout Box */}
+        <div className="bg-[#f8f4ff] border-r-4 border-accent p-8 rounded-xl mb-10 shadow-sm">
+          <p className="text-[18px] text-primary leading-relaxed font-medium">
+            {article.summaryHe}
+          </p>
+        </div>
+
+        {/* Article Body */}
+        <div
+          className="text-[16px] text-primary leading-[1.8] space-y-6"
+          dangerouslySetInnerHTML={{ __html: article.bodyHe }}
+        />
+
+        {/* Share Section */}
+        <div className="mt-16 pt-8 border-t border-border flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <span className="font-bold text-primary">שתפו:</span>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  navigator.share?.({
+                    title: article.titleHe,
+                    url: window.location.href,
+                  });
+                }}
+                className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:border-accent hover:text-accent transition-all"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  share
+                </span>
+              </button>
+            </div>
           </div>
-
-          {/* Share buttons */}
-          <div className="flex flex-wrap items-center gap-3 mb-10">
-            <span className="text-sm font-medium text-muted">
-              שתפו:
-            </span>
-            <button
-              onClick={handleShare}
-              className="w-10 h-10 rounded-full bg-card border border-slate-200 flex items-center justify-center text-muted hover:bg-accent hover:text-white hover:border-accent transition-all"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleTwitterShare}
-              className="w-10 h-10 rounded-full bg-card border border-slate-200 flex items-center justify-center text-muted hover:bg-accent hover:text-white hover:border-accent transition-all"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Original source */}
-          <div className="pt-6 border-t border-slate-200">
+          {article.originalUrl && (
             <a
               href={article.originalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
+              className="flex items-center gap-2 text-accent font-bold hover:underline transition-all"
             >
-              <ExternalLink className="h-4 w-4" />
-              קרא את המקור באנגלית
+              <span>קרא את המקור באנגלית</span>
+              <span className="material-symbols-outlined text-[18px]">
+                open_in_new
+              </span>
             </a>
-          </div>
-        </article>
-
-        {/* Related Articles */}
-        {related && related.length > 0 && (
-          <section className="mt-20">
-            <h2 className="text-3xl font-black text-primary mb-8">
-              כתבות נוספות
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {related.map((r) => (
-                <Link
-                  key={r.id}
-                  href={`/news/${r.slug}`}
-                  className="group bg-card rounded-xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all"
-                >
-                  {r.imageUrl ? (
-                    <div className="aspect-video overflow-hidden">
-                      <img
-                        src={r.imageUrl}
-                        alt={r.titleHe}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-slate-100" />
-                  )}
-                  <div className="p-4">
-                    <span className="text-xs text-muted">
-                      {formatHebrewDate(r.publishedAt.toDate())}
-                    </span>
-                    <h3 className="text-base font-bold text-primary mt-1 leading-snug group-hover:text-accent transition-colors line-clamp-2">
-                      {r.titleHe}
-                    </h3>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
-    </main>
+          )}
+        </div>
+      </article>
+    </div>
   );
 }

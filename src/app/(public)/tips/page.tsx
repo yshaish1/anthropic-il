@@ -1,224 +1,110 @@
 "use client";
 
 import { useState } from "react";
-import { Lightbulb, Code, Terminal, Zap } from "lucide-react";
 import { useTips } from "@/hooks/useTips";
-import { cn } from "@/lib/utils";
+import TipCard from "@/components/cards/TipCard";
 
-const categories = [
+const CATEGORIES = [
   { value: "all", label: "הכל" },
-  { value: "prompting", label: "פרומפטים" },
+  { value: "prompting", label: "Prompts" },
   { value: "api", label: "API" },
   { value: "claude-code", label: "Claude Code" },
   { value: "general", label: "כללי" },
 ];
 
-const difficulties = [
-  { value: "all", label: "כל הרמות" },
-  { value: "beginner", label: "מתחיל" },
-  { value: "intermediate", label: "בינוני" },
-  { value: "advanced", label: "מתקדם" },
+const DIFFICULTIES = [
+  { value: "all", label: "הכל" },
+  { value: "beginner", label: "מתחילים", color: "bg-[#00b894]" },
+  { value: "intermediate", label: "בינוני", color: "bg-yellow-400" },
+  { value: "advanced", label: "מתקדם", color: "bg-accent" },
 ];
-
-const difficultyConfig: Record<
-  string,
-  { label: string; color: string; bg: string; dot: string }
-> = {
-  beginner: {
-    label: "מתחיל",
-    color: "text-emerald-700",
-    bg: "bg-emerald-50 border-emerald-200",
-    dot: "bg-emerald-500",
-  },
-  intermediate: {
-    label: "בינוני",
-    color: "text-amber-700",
-    bg: "bg-amber-50 border-amber-200",
-    dot: "bg-amber-500",
-  },
-  advanced: {
-    label: "מתקדם",
-    color: "text-rose-700",
-    bg: "bg-rose-50 border-rose-200",
-    dot: "bg-rose-500",
-  },
-};
-
-const categoryConfig: Record<
-  string,
-  { label: string; icon: React.ElementType; iconBg: string; iconColor: string }
-> = {
-  prompting: {
-    label: "פרומפטים",
-    icon: Lightbulb,
-    iconBg: "bg-amber-100",
-    iconColor: "text-amber-600",
-  },
-  api: {
-    label: "API",
-    icon: Code,
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
-  },
-  "claude-code": {
-    label: "Claude Code",
-    icon: Terminal,
-    iconBg: "bg-purple-100",
-    iconColor: "text-purple-600",
-  },
-  general: {
-    label: "כללי",
-    icon: Zap,
-    iconBg: "bg-accent/10",
-    iconColor: "text-accent",
-  },
-};
 
 export default function TipsPage() {
   const [category, setCategory] = useState("all");
   const [difficulty, setDifficulty] = useState("all");
-  const { data: tips, isLoading } = useTips(category, difficulty);
+  const { data: tips, isLoading } = useTips(
+    category === "all" ? undefined : category,
+    difficulty === "all" ? undefined : difficulty
+  );
 
   return (
-    <main className="pt-16 pb-32">
-      <div className="mx-auto max-w-6xl px-6">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="headline-font text-5xl md:text-6xl font-black text-primary mb-3">
-            טיפים וטריקים
-          </h1>
-          <p className="text-lg text-muted">
-            כלים, טכניקות ומדריכים לעבודה מיטבית עם Claude
-          </p>
+    <div className="max-w-[1280px] mx-auto px-6 py-16">
+      {/* Header */}
+      <header className="mb-16">
+        <h1 className="text-[56px] headline-font font-extrabold tracking-tight text-primary mb-4 leading-tight">
+          טיפים וטריקים
+        </h1>
+        <p className="text-xl text-muted max-w-2xl">
+          כלים, טכניקות ומדריכים לעבודה מיטבית עם Claude
+        </p>
+      </header>
+
+      {/* Filters & Legend */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12">
+        {/* Difficulty Legend */}
+        <div className="flex items-center gap-6 bg-white px-6 py-3 rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.04)]">
+          {DIFFICULTIES.filter((d) => d.value !== "all").map((d) => (
+            <button
+              key={d.value}
+              onClick={() =>
+                setDifficulty(difficulty === d.value ? "all" : d.value)
+              }
+              className={`flex items-center gap-2 transition-opacity ${
+                difficulty !== "all" && difficulty !== d.value
+                  ? "opacity-40"
+                  : ""
+              }`}
+            >
+              <span className={`w-3 h-3 rounded-full ${d.color}`} />
+              <span className="text-sm font-medium text-primary">
+                {d.label}
+              </span>
+            </button>
+          ))}
         </div>
 
-        {/* Category pills */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          {categories.map((cat) => (
+        {/* Category Pills */}
+        <div className="flex flex-wrap gap-3">
+          {CATEGORIES.map((cat) => (
             <button
               key={cat.value}
               onClick={() => setCategory(cat.value)}
-              className={cn(
-                "px-5 py-2.5 rounded-full text-sm font-medium transition-all",
+              className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
                 category === cat.value
-                  ? "bg-accent text-white shadow-sm"
-                  : "bg-card border-2 border-slate-200 text-muted hover:border-accent hover:text-accent"
-              )}
+                  ? "bg-accent text-white shadow-md shadow-accent/20 font-bold"
+                  : "bg-white text-muted border border-border hover:border-accent hover:text-accent"
+              }`}
             >
               {cat.label}
             </button>
           ))}
         </div>
-
-        {/* Difficulty legend + filter */}
-        <div className="flex flex-wrap items-center gap-6 mb-10">
-          <span className="text-sm text-muted font-medium">
-            רמת קושי:
-          </span>
-          {difficulties.map((diff) => {
-            const config = difficultyConfig[diff.value];
-            return (
-              <button
-                key={diff.value}
-                onClick={() => setDifficulty(diff.value)}
-                className={cn(
-                  "flex items-center gap-2 text-sm transition-all",
-                  difficulty === diff.value
-                    ? "font-bold text-primary"
-                    : "text-muted hover:text-primary"
-                )}
-              >
-                {config && (
-                  <span
-                    className={cn("w-2.5 h-2.5 rounded-full", config.dot)}
-                  />
-                )}
-                {diff.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="p-8 rounded-xl bg-card animate-pulse min-h-[280px]"
-              />
-            ))}
-          </div>
-        ) : tips?.length ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {tips.map((tip) => {
-              const cat = categoryConfig[tip.category];
-              const diff = difficultyConfig[tip.difficulty];
-              const Icon = cat?.icon || Zap;
-
-              return (
-                <div
-                  key={tip.id}
-                  className="group p-8 rounded-xl bg-card border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 min-h-[280px] flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Top row: icon + difficulty */}
-                    <div className="flex items-center justify-between mb-5">
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center",
-                          cat?.iconBg || "bg-slate-100"
-                        )}
-                      >
-                        <Icon
-                          className={cn(
-                            "h-5 w-5",
-                            cat?.iconColor || "text-accent"
-                          )}
-                        />
-                      </div>
-                      {diff && (
-                        <span
-                          className={cn(
-                            "px-3 py-1 rounded-full text-xs font-bold border",
-                            diff.bg,
-                            diff.color
-                          )}
-                        >
-                          {diff.label}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="text-2xl font-bold text-primary mb-3 leading-snug">
-                      {tip.titleHe}
-                    </h3>
-
-                    {/* Description */}
-                    <p className="text-sm text-muted leading-relaxed line-clamp-4">
-                      {tip.contentHe}
-                    </p>
-                  </div>
-
-                  {/* Read more */}
-                  <div className="mt-6">
-                    <span className="text-accent font-bold text-sm group-hover:underline cursor-pointer">
-                      קרא עוד &larr;
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-muted text-lg">
-              אין טיפים עדיין.
-            </p>
-          </div>
-        )}
       </div>
-    </main>
+
+      {/* Tips Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-2xl h-[280px] animate-pulse"
+            />
+          ))}
+        </div>
+      ) : tips && tips.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
+          {tips.map((tip) => (
+            <TipCard key={tip.id} tip={tip} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-20">
+          <span className="material-symbols-outlined text-6xl text-muted mb-4 block">
+            lightbulb
+          </span>
+          <p className="text-muted text-xl">אין טיפים בקטגוריה זו</p>
+        </div>
+      )}
+    </div>
   );
 }

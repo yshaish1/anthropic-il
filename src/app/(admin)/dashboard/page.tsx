@@ -1,682 +1,737 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  Newspaper,
-  MessageSquare,
-  Bell,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  LogIn,
-  LayoutDashboard,
-  Lightbulb,
-  TrendingUp,
-  FileText,
-  Users,
-} from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
 import {
   signInWithPopup,
   GoogleAuthProvider,
   onAuthStateChanged,
-  User,
+  signOut,
+  type User,
 } from "firebase/auth";
-import { getClientAuth, getClientDb } from "@/lib/firebase/config";
 import {
-  doc,
-  getDoc,
   collection,
   query,
   orderBy,
   limit,
   getDocs,
   getCountFromServer,
+  doc,
+  deleteDoc,
+  setDoc,
+  updateDoc,
+  where,
 } from "firebase/firestore";
+import { getClientAuth, getClientDb } from "@/lib/firebase/config";
 import { COLLECTIONS } from "@/lib/firebase/collections";
-import { cn, formatHebrewDate } from "@/lib/utils";
+import type { Tip, FetchLog } from "@/types";
 import { toast } from "sonner";
-
-type FetchType = "news" | "reddit" | "releases";
-
-interface FetchLogEntry {
-  id: string;
-  type: string;
-  trigger: string;
-  status: string;
-  newItems: number;
-  completedAt: { toDate: () => Date };
-}
-
-interface Stats {
-  articles: number;
-  reddit: number;
-  releases: number;
-  tips: number;
-}
-
-interface TipItem {
-  id: string;
-  titleHe: string;
-  contentHe: string;
-  category: string;
-  difficulty: string;
-  published: boolean;
-  order: number;
-}
+import { formatHebrewDate } from "@/lib/utils";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [fetching, setFetching] = useState<FetchType | null>(null);
-  const [fetchLogs, setFetchLogs] = useState<FetchLogEntry[]>([]);
-  const [tips, setTips] = useState<TipItem[]>([]);
-  const [editingTip, setEditingTip] = useState<TipItem | null>(null);
-  const [showTipForm, setShowTipForm] = useState(false);
-  const [generatingTips, setGeneratingTips] = useState(false);
-  const [tipForm, setTipForm] = useState({
-    titleHe: "",
-    contentHe: "",
-    category: "general",
-    difficulty: "beginner",
-  });
-  const [stats, setStats] = useState<Stats>({
+
+  // Stats
+  const [stats, setStats] = useState({
     articles: 0,
     reddit: 0,
     releases: 0,
     tips: 0,
   });
 
+  // Tips management
+  const [tips, setTips] = useState<Tip[]>([]);
+  const [editingTip, setEditingTip] = useState<Tip | null>(null);
+  const [showTipForm, setShowTipForm] = useState(false);
+  const [tipForm, setTipForm] = useState({
+    titleHe: "",
+    contentHe: "",
+    category: "general" as Tip["category"],
+    difficulty: "beginner" as Tip["difficulty"],
+  });
+
+  // Fetch logs
+  const [fetchLogs, setFetchLogs] = useState<FetchLog[]>([]);
+
+  // Fetching states
+  const [fetchingType, setFetchingType] = useState<string | null>(null);
+
+  // Auth check
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getClientAuth(), async (u) => {
+    const auth = getClientAuth();
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
-        const adminDoc = await getDoc(
-          doc(getClientDb(), COLLECTIONS.ADMINS, u.uid)
+        const db = getClientDb();
+        const adminDoc = await getDocs(
+          query(
+            collection(db, COLLECTIONS.ADMINS),
+            where("uid", "==", u.uid)
+          )
         );
-        setIsAdmin(adminDoc.exists());
+        setIsAdmin(!adminDoc.empty);
       } else {
         setIsAdmin(false);
       }
       setLoading(false);
     });
-    return unsubscribe;
+    return () => unsub();
   }, []);
 
-  useEffect(() => {
+  // Load data
+  const loadData = useCallback(async () => {
     if (!isAdmin) return;
-    loadFetchLogs();
-    loadStats();
-    loadTips();
-  }, [isAdmin]);
-
-  async function loadStats() {
     const db = getClientDb();
-    try {
-      const [articles, reddit, releases, tips] = await Promise.all([
+
+    // Stats
+    const [articlesSnap, redditSnap, releasesSnap, tipsSnap] =
+      await Promise.all([
         getCountFromServer(collection(db, COLLECTIONS.ARTICLES)),
         getCountFromServer(collection(db, COLLECTIONS.REDDIT_POSTS)),
         getCountFromServer(collection(db, COLLECTIONS.RELEASES)),
         getCountFromServer(collection(db, COLLECTIONS.TIPS)),
       ]);
-      setStats({
-        articles: articles.data().count,
-        reddit: reddit.data().count,
-        releases: releases.data().count,
-        tips: tips.data().count,
-      });
-    } catch {
-      // Counts may fail if collections don't exist yet
-    }
-  }
 
-  async function loadFetchLogs() {
-    const q = query(
-      collection(getClientDb(), COLLECTIONS.FETCH_LOGS),
-      orderBy("completedAt", "desc"),
+    setStats({
+      articles: articlesSnap.data().count,
+      reddit: redditSnap.data().count,
+      releases: releasesSnap.data().count,
+      tips: tipsSnap.data().count,
+    });
+
+    // Tips (all, including unpublished)
+    const tipsQuery = query(
+      collection(db, COLLECTIONS.TIPS),
+      orderBy("order")
+    );
+    const tipsSnapshot = await getDocs(tipsQuery);
+    setTips(
+      tipsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Tip)
+    );
+
+    // Fetch logs
+    const logsQuery = query(
+      collection(db, COLLECTIONS.FETCH_LOGS),
+      orderBy("startedAt", "desc"),
       limit(10)
     );
-    const snapshot = await getDocs(q);
+    const logsSnapshot = await getDocs(logsQuery);
     setFetchLogs(
-      snapshot.docs.map(
-        (d) => ({ id: d.id, ...d.data() }) as FetchLogEntry
-      )
+      logsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as FetchLog)
     );
-  }
+  }, [isAdmin]);
 
-  async function loadTips() {
-    if (!user) return;
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Sign in
+  const handleSignIn = async () => {
+    const auth = getClientAuth();
+    const provider = new GoogleAuthProvider();
     try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/admin/manage-tips", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTips(data);
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  async function saveTip(isEdit: boolean) {
-    if (!user) return;
-    const token = await user.getIdToken();
-    const method = isEdit ? "PUT" : "POST";
-    const body = isEdit
-      ? { ...tipForm, id: editingTip?.id }
-      : { ...tipForm, published: false };
-
-    const res = await fetch("/api/admin/manage-tips", {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (res.ok) {
-      toast.success(isEdit ? "הטיפ עודכן" : "הטיפ נוצר");
-      setShowTipForm(false);
-      setEditingTip(null);
-      setTipForm({ titleHe: "", contentHe: "", category: "general", difficulty: "beginner" });
-      loadTips();
-      loadStats();
-    } else {
-      toast.error("שגיאה בשמירת הטיפ");
-    }
-  }
-
-  async function deleteTip(id: string) {
-    if (!user || !confirm("למחוק את הטיפ?")) return;
-    const token = await user.getIdToken();
-    const res = await fetch("/api/admin/manage-tips", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ id }),
-    });
-    if (res.ok) {
-      toast.success("הטיפ נמחק");
-      loadTips();
-      loadStats();
-    }
-  }
-
-  async function togglePublish(tip: TipItem) {
-    if (!user) return;
-    const token = await user.getIdToken();
-    await fetch("/api/admin/manage-tips", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ id: tip.id, published: !tip.published }),
-    });
-    loadTips();
-    loadStats();
-  }
-
-  async function autoGenerateTips() {
-    if (!user) return;
-    setGeneratingTips(true);
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/admin/trigger-fetch", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ type: "tips" }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(`נוצרו ${data.newItems} טיפים חדשים`);
-        loadTips();
-        loadStats();
-      } else {
-        toast.error(data.error || "שגיאה ביצירת טיפים");
-      }
-    } catch {
-      toast.error("שגיאה ביצירת טיפים");
-    }
-    setGeneratingTips(false);
-  }
-
-  async function handleSignIn() {
-    try {
-      await signInWithPopup(getClientAuth(), new GoogleAuthProvider());
+      await signInWithPopup(auth, provider);
     } catch {
       toast.error("שגיאה בהתחברות");
     }
-  }
+  };
 
-  async function triggerFetch(type: FetchType) {
-    if (!user) return;
-    setFetching(type);
+  // Sign out
+  const handleSignOut = async () => {
+    const auth = getClientAuth();
+    await signOut(auth);
+  };
+
+  // Trigger fetch
+  const handleFetch = async (type: string) => {
+    setFetchingType(type);
     try {
-      const token = await user.getIdToken();
       const res = await fetch("/api/admin/trigger-fetch", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(`נשלפו ${data.newItems} פריטים חדשים`);
-        loadFetchLogs();
-        loadStats();
-      } else {
-        toast.error(data.error || "שגיאה בשליפה");
-      }
+      if (!res.ok) throw new Error("Fetch failed");
+      toast.success(`שליפת ${type} הושלמה בהצלחה`);
+      loadData();
     } catch {
-      toast.error("שגיאה בשליפה");
+      toast.error(`שגיאה בשליפת ${type}`);
+    } finally {
+      setFetchingType(null);
     }
-    setFetching(null);
-  }
+  };
 
+  // Tip CRUD
+  const handleSaveTip = async () => {
+    const db = getClientDb();
+    try {
+      if (editingTip) {
+        await updateDoc(doc(db, COLLECTIONS.TIPS, editingTip.id), {
+          titleHe: tipForm.titleHe,
+          contentHe: tipForm.contentHe,
+          category: tipForm.category,
+          difficulty: tipForm.difficulty,
+          updatedAt: new Date(),
+        });
+        toast.success("הטיפ עודכן בהצלחה");
+      } else {
+        const newId = crypto.randomUUID();
+        await setDoc(doc(db, COLLECTIONS.TIPS, newId), {
+          titleHe: tipForm.titleHe,
+          contentHe: tipForm.contentHe,
+          category: tipForm.category,
+          difficulty: tipForm.difficulty,
+          order: tips.length + 1,
+          published: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        toast.success("הטיפ נוצר בהצלחה");
+      }
+      resetTipForm();
+      loadData();
+    } catch {
+      toast.error("שגיאה בשמירת הטיפ");
+    }
+  };
+
+  const handleDeleteTip = async (tipId: string) => {
+    const db = getClientDb();
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.TIPS, tipId));
+      toast.success("הטיפ נמחק");
+      loadData();
+    } catch {
+      toast.error("שגיאה במחיקת הטיפ");
+    }
+  };
+
+  const handleTogglePublish = async (tip: Tip) => {
+    const db = getClientDb();
+    try {
+      await updateDoc(doc(db, COLLECTIONS.TIPS, tip.id), {
+        published: !tip.published,
+        updatedAt: new Date(),
+      });
+      toast.success(tip.published ? "הטיפ הוסתר" : "הטיפ פורסם");
+      loadData();
+    } catch {
+      toast.error("שגיאה בעדכון הטיפ");
+    }
+  };
+
+  const startEditTip = (tip: Tip) => {
+    setEditingTip(tip);
+    setTipForm({
+      titleHe: tip.titleHe,
+      contentHe: tip.contentHe,
+      category: tip.category,
+      difficulty: tip.difficulty,
+    });
+    setShowTipForm(true);
+  };
+
+  const resetTipForm = () => {
+    setEditingTip(null);
+    setShowTipForm(false);
+    setTipForm({
+      titleHe: "",
+      contentHe: "",
+      category: "general",
+      difficulty: "beginner",
+    });
+  };
+
+  const handleAutoGenerateTips = async () => {
+    setFetchingType("tips");
+    try {
+      const res = await fetch("/api/admin/trigger-fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "tips" }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("יצירת טיפים אוטומטית הושלמה");
+      loadData();
+    } catch {
+      toast.error("שגיאה ביצירת טיפים");
+    } finally {
+      setFetchingType(null);
+    }
+  };
+
+  // Difficulty config
+  const DIFF_LABELS: Record<string, { label: string; color: string }> = {
+    beginner: { label: "קל", color: "text-[#00b894]" },
+    intermediate: { label: "בינוני", color: "text-amber-600" },
+    advanced: { label: "מתקדם", color: "text-red-600" },
+  };
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    prompting: "פרומפטינג",
+    api: "API",
+    "claude-code": "Claude Code",
+    general: "כללי",
+  };
+
+  // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <RefreshCw className="h-8 w-8 animate-spin text-muted" />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent" />
       </div>
     );
   }
 
+  // Not signed in
   if (!user) {
     return (
-      <main className="pt-16 pb-32">
-        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center">
-            <LayoutDashboard className="h-10 w-10 text-muted/40" />
-          </div>
-          <h1 className="headline-font text-4xl font-black text-primary">לוח בקרה</h1>
-          <p className="text-muted text-lg">
-            יש להתחבר כדי לגשת ללוח הבקרה
-          </p>
-          <button
-            onClick={handleSignIn}
-            className="flex items-center gap-2 px-8 py-3.5 rounded-full bg-primary text-white font-medium hover:bg-primary/80 transition-colors text-base"
-          >
-            <LogIn className="h-5 w-5" />
-            התחבר עם Google
-          </button>
-        </div>
-      </main>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-8">
+        <h1 className="text-4xl font-black headline-font text-primary">
+          לוח בקרה
+        </h1>
+        <p className="text-muted text-lg">יש להתחבר כדי לגשת ללוח הבקרה</p>
+        <button
+          onClick={handleSignIn}
+          className="px-8 py-4 bg-primary text-white rounded-xl font-bold text-lg hover:shadow-lg transition-all flex items-center gap-3"
+        >
+          <span className="material-symbols-outlined">login</span>
+          התחברות עם Google
+        </button>
+      </div>
     );
   }
 
+  // Not admin
   if (!isAdmin) {
     return (
-      <main className="pt-16 pb-32">
-        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-          <XCircle className="h-16 w-16 text-red-500" />
-          <h1 className="headline-font text-4xl font-black text-primary">אין גישה</h1>
-          <p className="text-muted text-lg">
-            המשתמש {user.email} אינו מנהל מערכת.
-          </p>
-        </div>
-      </main>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
+        <span className="material-symbols-outlined text-6xl text-red-500">
+          block
+        </span>
+        <h1 className="text-3xl font-bold headline-font text-primary">
+          אין גישה
+        </h1>
+        <p className="text-muted">המשתמש {user.email} אינו מנהל מורשה</p>
+        <button
+          onClick={handleSignOut}
+          className="px-6 py-3 bg-slate-200 text-primary rounded-lg font-bold"
+        >
+          התנתקות
+        </button>
+      </div>
     );
   }
 
-  const fetchButtons: {
-    type: FetchType;
-    icon: React.ElementType;
-    label: string;
-    description: string;
-  }[] = [
-    {
-      type: "news",
-      icon: Newspaper,
-      label: "שלוף חדשות",
-      description: "שליפה ותרגום כתבות מבלוג Anthropic",
-    },
-    {
-      type: "reddit",
-      icon: MessageSquare,
-      label: "שלוף רדיט",
-      description: "שליפת פוסטים פופולריים מ-Reddit",
-    },
-    {
-      type: "releases",
-      icon: Bell,
-      label: "שלוף עדכונים",
-      description: "שליפת עדכוני מוצר ושחרורים",
-    },
-  ];
-
-  const statCards = [
-    {
-      icon: FileText,
-      label: "כתבות",
-      value: stats.articles,
-      color: "text-accent",
-      bg: "bg-accent/10",
-    },
-    {
-      icon: MessageSquare,
-      label: "פוסטים מרדיט",
-      value: stats.reddit,
-      color: "text-blue-600",
-      bg: "bg-blue-100",
-    },
-    {
-      icon: TrendingUp,
-      label: "עדכונים",
-      value: stats.releases,
-      color: "text-purple-600",
-      bg: "bg-purple-100",
-    },
-    {
-      icon: Lightbulb,
-      label: "טיפים",
-      value: stats.tips,
-      color: "text-amber-600",
-      bg: "bg-amber-100",
-    },
-  ];
-
   return (
-    <main className="pt-16 pb-32">
-      <div className="mx-auto max-w-6xl px-6">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="headline-font text-4xl font-black text-primary mb-1">לוח בקרה</h1>
-          <p className="text-muted">
-            שלום, {user.displayName || user.email}
-          </p>
+    <div className="max-w-[1280px] mx-auto px-6 pt-8 pb-12">
+      {/* Page Header */}
+      <header className="mb-10 text-right flex flex-row-reverse justify-between items-start">
+        <div>
+          <h1 className="text-[48px] font-black headline-font text-primary tracking-tight mb-2">
+            לוח בקרה
+          </h1>
+          <p className="text-muted text-lg">שלום, {user.email}</p>
         </div>
+        <button
+          onClick={handleSignOut}
+          className="px-4 py-2 text-muted hover:text-primary transition-colors flex items-center gap-2"
+        >
+          <span className="material-symbols-outlined">logout</span>
+          <span>התנתקות</span>
+        </button>
+      </header>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          {statCards.map((stat) => {
-            const Icon = stat.icon;
-            return (
+      {/* Stats Grid */}
+      <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        {[
+          {
+            label: "כתבות",
+            count: stats.articles,
+            icon: "article",
+            bg: "bg-pink-50",
+            text: "text-accent",
+          },
+          {
+            label: "פוסטים מרדיט",
+            count: stats.reddit,
+            icon: "forum",
+            bg: "bg-blue-50",
+            text: "text-blue-500",
+          },
+          {
+            label: "עדכונים",
+            count: stats.releases,
+            icon: "trending_up",
+            bg: "bg-purple-50",
+            text: "text-purple-500",
+          },
+          {
+            label: "טיפים",
+            count: stats.tips,
+            icon: "lightbulb",
+            bg: "bg-amber-50",
+            text: "text-amber-500",
+          },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="bg-white p-6 rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:shadow-lg transition-all group"
+          >
+            <div className="flex items-center justify-between mb-4 flex-row-reverse">
               <div
-                key={stat.label}
-                className="bg-card rounded-xl p-5 border border-slate-100 shadow-sm"
+                className={`w-12 h-12 ${stat.bg} ${stat.text} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <div
-                    className={cn(
-                      "w-9 h-9 rounded-lg flex items-center justify-center",
-                      stat.bg
-                    )}
-                  >
-                    <Icon className={cn("h-4 w-4", stat.color)} />
-                  </div>
-                  <span className="text-sm text-muted font-medium">
-                    {stat.label}
-                  </span>
-                </div>
-                <span className="text-3xl font-black text-primary">
-                  {stat.value}
-                </span>
+                <span className="material-symbols-outlined">{stat.icon}</span>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Content fetch section */}
-        <section className="bg-slate-100 rounded-xl p-8 mb-10">
-          <h2 className="text-xl font-bold text-primary mb-2">שליפת תוכן</h2>
-          <p className="text-sm text-muted mb-6">
-            שליפה ידנית של תוכן ממקורות חיצוניים
-          </p>
-          <div className="grid gap-4 md:grid-cols-3">
-            {fetchButtons.map(({ type, icon: Icon, label, description }) => (
-              <button
-                key={type}
-                onClick={() => triggerFetch(type)}
-                disabled={fetching !== null}
-                className={cn(
-                  "flex flex-col items-start gap-2 p-5 rounded-xl bg-card border border-slate-100 hover:shadow-xl hover:-translate-y-2 hover:border-accent transition-all text-right",
-                  fetching === type && "opacity-60"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  {fetching === type ? (
-                    <RefreshCw className="h-5 w-5 animate-spin text-accent" />
-                  ) : (
-                    <Icon className="h-5 w-5 text-accent" />
-                  )}
-                  <span className="font-bold text-primary">{label}</span>
-                </div>
-                <span className="text-xs text-muted">
-                  {description}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Tips management */}
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-primary">ניהול טיפים</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={autoGenerateTips}
-                disabled={generatingTips}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 text-accent font-medium text-sm hover:bg-accent/20 transition-colors"
-              >
-                {generatingTips ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Lightbulb className="h-4 w-4" />
-                )}
-                צור טיפים אוטומטיים
-              </button>
-              <button
-                onClick={() => {
-                  setShowTipForm(true);
-                  setEditingTip(null);
-                  setTipForm({ titleHe: "", contentHe: "", category: "general", difficulty: "beginner" });
-                }}
-                className="px-4 py-2 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary/80 transition-colors"
-              >
-                + הוסף טיפ
-              </button>
+            </div>
+            <div className="text-right">
+              <p className="text-muted font-medium mb-1">{stat.label}</p>
+              <h3 className="text-3xl font-black headline-font text-primary">
+                {stat.count}
+              </h3>
             </div>
           </div>
+        ))}
+      </section>
 
-          {/* Tip form */}
-          {showTipForm && (
-            <div className="bg-card rounded-xl border border-slate-100 p-6 mb-4">
-              <h3 className="font-bold text-primary mb-4">
-                {editingTip ? "עריכת טיפ" : "טיפ חדש"}
-              </h3>
-              <div className="space-y-4">
+      {/* Content Fetch Section */}
+      <section className="bg-slate-100 p-8 rounded-xl mb-12">
+        <div className="mb-8 text-right">
+          <h2 className="text-2xl font-black headline-font text-primary mb-1">
+            שליפת תוכן
+          </h2>
+          <p className="text-muted">שליפה ידנית של תוכן ממקורות חיצוניים</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            {
+              type: "news",
+              label: "שלוף חדשות",
+              desc: "עדכון מאתרים ובלוגים מובילים",
+              icon: "newspaper",
+              bg: "bg-pink-50",
+              text: "text-accent",
+            },
+            {
+              type: "reddit",
+              label: "שלוף רדיט",
+              desc: "סנכרון מ-r/ClaudeAI ו-r/Anthropic",
+              icon: "chat",
+              bg: "bg-blue-50",
+              text: "text-blue-500",
+            },
+            {
+              type: "releases",
+              label: "שלוף עדכונים",
+              desc: "סריקה של דפי שחרור גרסאות",
+              icon: "notifications_active",
+              bg: "bg-green-50",
+              text: "text-[#00b894]",
+            },
+          ].map((item) => (
+            <button
+              key={item.type}
+              onClick={() => handleFetch(item.type)}
+              disabled={fetchingType === item.type}
+              className="flex flex-col items-center bg-white p-8 rounded-xl border-2 border-transparent hover:border-accent transition-all group text-center shadow-sm disabled:opacity-50"
+            >
+              <div
+                className={`w-16 h-16 ${item.bg} ${item.text} rounded-full flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform`}
+              >
+                {fetchingType === item.type ? (
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
+                ) : (
+                  <span className="material-symbols-outlined text-3xl">
+                    {item.icon}
+                  </span>
+                )}
+              </div>
+              <span className="text-xl font-bold mb-2">{item.label}</span>
+              <span className="text-sm text-muted">{item.desc}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Tips Management */}
+      <section className="mb-12">
+        <div className="flex flex-row-reverse justify-between items-center mb-8">
+          <h2 className="text-2xl font-black headline-font text-primary">
+            ניהול טיפים
+          </h2>
+          <div className="flex gap-4">
+            <button
+              onClick={handleAutoGenerateTips}
+              disabled={fetchingType === "tips"}
+              className="px-6 py-2 rounded-full border-2 border-accent text-accent font-bold hover:bg-accent/5 transition-all disabled:opacity-50"
+            >
+              {fetchingType === "tips" ? "מייצר..." : "צור טיפים אוטומטיים"}
+            </button>
+            <button
+              onClick={() => {
+                resetTipForm();
+                setShowTipForm(true);
+              }}
+              className="px-6 py-2 rounded-full bg-primary text-white font-bold hover:shadow-lg transition-all flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">add</span>
+              <span>הוסף טיפ</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tip Form Modal */}
+        {showTipForm && (
+          <div className="bg-white p-8 rounded-xl shadow-lg mb-8 border border-border">
+            <h3 className="text-xl font-bold headline-font text-primary mb-6">
+              {editingTip ? "עריכת טיפ" : "טיפ חדש"}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-primary mb-1">
+                  כותרת
+                </label>
                 <input
+                  type="text"
                   value={tipForm.titleHe}
-                  onChange={(e) => setTipForm({ ...tipForm, titleHe: e.target.value })}
-                  placeholder="כותרת הטיפ"
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-card text-primary text-right"
+                  onChange={(e) =>
+                    setTipForm({ ...tipForm, titleHe: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-right"
+                  placeholder="כותרת הטיפ..."
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-primary mb-1">
+                  תוכן
+                </label>
                 <textarea
                   value={tipForm.contentHe}
-                  onChange={(e) => setTipForm({ ...tipForm, contentHe: e.target.value })}
-                  placeholder="תוכן הטיפ"
+                  onChange={(e) =>
+                    setTipForm({ ...tipForm, contentHe: e.target.value })
+                  }
                   rows={4}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-card text-primary text-right"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent text-right"
+                  placeholder="תוכן הטיפ..."
                 />
-                <div className="flex gap-4">
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1">
+                    קטגוריה
+                  </label>
                   <select
                     value={tipForm.category}
-                    onChange={(e) => setTipForm({ ...tipForm, category: e.target.value })}
-                    className="px-4 py-2 rounded-lg border border-slate-200 bg-card text-primary"
+                    onChange={(e) =>
+                      setTipForm({
+                        ...tipForm,
+                        category: e.target.value as Tip["category"],
+                      })
+                    }
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent text-right"
                   >
-                    <option value="general">כללי</option>
-                    <option value="prompting">פרומפטים</option>
+                    <option value="prompting">פרומפטינג</option>
                     <option value="api">API</option>
                     <option value="claude-code">Claude Code</option>
+                    <option value="general">כללי</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1">
+                    רמת קושי
+                  </label>
                   <select
                     value={tipForm.difficulty}
-                    onChange={(e) => setTipForm({ ...tipForm, difficulty: e.target.value })}
-                    className="px-4 py-2 rounded-lg border border-slate-200 bg-card text-primary"
+                    onChange={(e) =>
+                      setTipForm({
+                        ...tipForm,
+                        difficulty: e.target.value as Tip["difficulty"],
+                      })
+                    }
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-accent text-right"
                   >
-                    <option value="beginner">מתחיל</option>
+                    <option value="beginner">מתחילים</option>
                     <option value="intermediate">בינוני</option>
                     <option value="advanced">מתקדם</option>
                   </select>
                 </div>
+              </div>
+              <div className="flex gap-4 justify-end pt-4">
+                <button
+                  onClick={resetTipForm}
+                  className="px-6 py-2 text-muted hover:text-primary transition-colors"
+                >
+                  ביטול
+                </button>
+                <button
+                  onClick={handleSaveTip}
+                  disabled={!tipForm.titleHe || !tipForm.contentHe}
+                  className="px-8 py-2 bg-accent text-white rounded-lg font-bold hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  {editingTip ? "עדכון" : "שמירה"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tips List */}
+        <div className="space-y-3">
+          {tips.map((tip) => {
+            const diff = DIFF_LABELS[tip.difficulty] || DIFF_LABELS.beginner;
+            return (
+              <div
+                key={tip.id}
+                className="bg-white p-4 rounded-xl flex flex-row-reverse items-center justify-between shadow-sm border border-transparent hover:border-border transition-all"
+              >
+                <div className="flex flex-row-reverse items-center gap-6">
+                  <button
+                    onClick={() => handleTogglePublish(tip)}
+                    title={tip.published ? "מפורסם" : "טיוטה"}
+                  >
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        tip.published ? "bg-[#00b894]" : "bg-slate-300"
+                      }`}
+                    />
+                  </button>
+                  <span className="font-bold text-primary">
+                    {tip.titleHe}
+                  </span>
+                  <span className="px-3 py-1 bg-slate-100 text-muted text-xs rounded-full">
+                    {CATEGORY_LABELS[tip.category] || tip.category}
+                  </span>
+                  <span
+                    className={`flex items-center gap-1 text-xs font-bold ${diff.color}`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        diff.color === "text-[#00b894]"
+                          ? "bg-[#00b894]"
+                          : diff.color === "text-amber-600"
+                          ? "bg-amber-600"
+                          : "bg-red-600"
+                      }`}
+                    />
+                    {diff.label}
+                  </span>
+                </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => saveTip(!!editingTip)}
-                    className="px-6 py-2 rounded-lg bg-primary text-white font-medium text-sm"
+                    onClick={() => startEditTip(tip)}
+                    className="p-2 text-muted hover:text-primary transition-colors"
                   >
-                    {editingTip ? "עדכן" : "שמור"}
+                    <span className="material-symbols-outlined">edit</span>
                   </button>
                   <button
-                    onClick={() => { setShowTipForm(false); setEditingTip(null); }}
-                    className="px-6 py-2 rounded-lg border border-slate-200 text-muted font-medium text-sm"
+                    onClick={() => handleDeleteTip(tip.id)}
+                    className="p-2 text-muted hover:text-red-500 transition-colors"
                   >
-                    ביטול
+                    <span className="material-symbols-outlined">delete</span>
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })}
+        </div>
+      </section>
 
-          {/* Tips list */}
-          {tips.length > 0 ? (
-            <div className="space-y-2">
-              {tips.filter(t => !("_notRelease" in t)).map((tip) => (
-                <div
-                  key={tip.id}
-                  className="flex items-center gap-4 p-4 bg-card rounded-xl border border-slate-100"
-                >
-                  <button
-                    onClick={() => togglePublish(tip)}
-                    className={cn(
-                      "w-3 h-3 rounded-full shrink-0 transition-colors",
-                      tip.published ? "bg-emerald-500" : "bg-slate-300"
-                    )}
-                    title={tip.published ? "פורסם" : "טיוטה"}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-primary text-sm line-clamp-1">
-                      {tip.titleHe}
-                    </span>
-                    <div className="flex gap-2 mt-1">
-                      <span className="text-[10px] text-muted bg-slate-100 px-2 py-0.5 rounded-full">
-                        {tip.category}
-                      </span>
-                      <span className="text-[10px] text-muted bg-slate-100 px-2 py-0.5 rounded-full">
-                        {tip.difficulty}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => {
-                        setEditingTip(tip);
-                        setTipForm({
-                          titleHe: tip.titleHe,
-                          contentHe: tip.contentHe,
-                          category: tip.category,
-                          difficulty: tip.difficulty,
-                        });
-                        setShowTipForm(true);
-                      }}
-                      className="p-2 rounded-lg text-muted hover:bg-slate-100 text-xs"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => deleteTip(tip.id)}
-                      className="p-2 rounded-lg text-red-500 hover:bg-red-50 text-xs"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-card rounded-xl border border-slate-100 p-8 text-center">
-              <p className="text-muted">אין טיפים עדיין. צור טיפים אוטומטיים או הוסף ידנית.</p>
-            </div>
-          )}
-        </section>
+      {/* Fetch Log Table */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-black headline-font text-primary mb-6 text-right">
+          יומן שליפות
+        </h2>
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-border">
+          <table className="w-full text-right">
+            <thead className="bg-slate-50 border-b border-border">
+              <tr>
+                <th className="px-6 py-4 font-bold text-muted">סטטוס</th>
+                <th className="px-6 py-4 font-bold text-muted">סוג</th>
+                <th className="px-6 py-4 font-bold text-muted">הופעל ע&quot;י</th>
+                <th className="px-6 py-4 font-bold text-muted">פריטים חדשים</th>
+                <th className="px-6 py-4 font-bold text-muted">תאריך</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {fetchLogs.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-8 text-center text-muted"
+                  >
+                    אין רשומות ביומן
+                  </td>
+                </tr>
+              ) : (
+                fetchLogs.map((log) => {
+                  const logDate = log.startedAt?.toDate
+                    ? log.startedAt.toDate()
+                    : new Date();
+                  const typeBadge: Record<
+                    string,
+                    { bg: string; text: string; label: string }
+                  > = {
+                    news: {
+                      bg: "bg-pink-100",
+                      text: "text-accent",
+                      label: "News",
+                    },
+                    reddit: {
+                      bg: "bg-blue-100",
+                      text: "text-blue-700",
+                      label: "Reddit",
+                    },
+                    releases: {
+                      bg: "bg-green-100",
+                      text: "text-[#00b894]",
+                      label: "Update",
+                    },
+                  };
+                  const badge = typeBadge[log.type] || typeBadge.news;
 
-        {/* Fetch log table */}
-        <section>
-          <h2 className="text-xl font-bold text-primary mb-4">יומן שליפות</h2>
-          {fetchLogs.length > 0 ? (
-            <div className="bg-card rounded-xl border border-slate-100 overflow-hidden shadow-sm">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-100">
-                    <th className="text-right p-4 font-medium text-muted">
-                      סטטוס
-                    </th>
-                    <th className="text-right p-4 font-medium text-muted">
-                      סוג
-                    </th>
-                    <th className="text-right p-4 font-medium text-muted">
-                      מקור
-                    </th>
-                    <th className="text-right p-4 font-medium text-muted">
-                      פריטים חדשים
-                    </th>
-                    <th className="text-right p-4 font-medium text-muted">
-                      תאריך
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {fetchLogs.map((log) => (
-                    <tr
-                      key={log.id}
-                      className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
-                    >
-                      <td className="p-4">
-                        {log.status === "success" ? (
-                          <CheckCircle className="h-5 w-5 text-emerald-500" />
-                        ) : log.status === "partial" ? (
-                          <CheckCircle className="h-5 w-5 text-amber-500" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-red-500" />
-                        )}
-                      </td>
-                      <td className="p-4 font-medium text-primary">
-                        {log.type}
-                      </td>
-                      <td className="p-4 text-muted">
-                        {log.trigger}
-                      </td>
-                      <td className="p-4">
-                        <span className="px-2.5 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-bold">
-                          {log.newItems}
+                  return (
+                    <tr key={log.id}>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`material-symbols-outlined ${
+                            log.status === "success"
+                              ? "text-[#00b894]"
+                              : log.status === "failed"
+                              ? "text-red-500"
+                              : "text-amber-500"
+                          }`}
+                        >
+                          {log.status === "success"
+                            ? "check_circle"
+                            : log.status === "failed"
+                            ? "cancel"
+                            : "warning"}
                         </span>
                       </td>
-                      <td className="p-4 text-muted text-xs">
-                        {log.completedAt?.toDate?.()?.toLocaleString("he-IL")}
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2 py-1 ${badge.bg} ${badge.text} rounded text-xs font-bold`}
+                        >
+                          {badge.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-medium">
+                        {log.trigger === "cron" ? "אוטומטי" : "ידני"}
+                      </td>
+                      <td className="px-6 py-4">{log.newItems} פריטים</td>
+                      <td className="px-6 py-4 text-muted text-sm">
+                        {formatHebrewDate(logDate)}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="bg-card rounded-xl border border-slate-100 p-12 text-center">
-              <p className="text-muted">אין רשומות עדיין.</p>
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   );
 }

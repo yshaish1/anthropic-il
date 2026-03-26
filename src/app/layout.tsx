@@ -1,50 +1,50 @@
 import type { Metadata } from "next";
-import { DM_Sans, Sora } from "next/font/google";
-import { Toaster } from "sonner";
-import QueryProvider from "@/components/providers/QueryProvider";
+import { Sora, DM_Sans } from "next/font/google";
+import "./globals.css";
 import ThemeProvider from "@/components/providers/ThemeProvider";
+import QueryProvider from "@/components/providers/QueryProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import "./globals.css";
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-});
+import { Toaster } from "sonner";
 
 const sora = Sora({
-  variable: "--font-sora",
   subsets: ["latin"],
+  variable: "--font-sora",
   weight: ["400", "600", "700", "800"],
 });
 
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  weight: ["400", "500", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "אנתרופיק IL | חדשות Anthropic ו-Claude בעברית",
+  title: "אנתרופיק IL — חדשות ועדכונים מ-Anthropic בעברית",
   description:
-    "כל החדשות, העדכונים והטיפים על Anthropic ו-Claude - מתורגמים לעברית.",
+    "כל החדשות, העדכונים, הטיפים ודיוני הקהילה מ-Anthropic ו-Claude בתרגום לעברית",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html
-      lang="he"
-      dir="rtl"
-      data-theme="light"
-      className={`${dmSans.variable} ${sora.variable} antialiased`}
-      suppressHydrationWarning
-    >
-      <body className="min-h-dvh flex flex-col overflow-x-hidden">
+    <html lang="he" dir="rtl" className={`${sora.variable} ${dmSans.variable}`}>
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="font-[var(--font-dm-sans)] antialiased min-h-screen flex flex-col">
         <ThemeProvider>
           <QueryProvider>
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-grow">{children}</main>
             <Footer />
-            <Toaster position="bottom-left" dir="rtl" />
+            <Toaster position="top-center" richColors />
           </QueryProvider>
         </ThemeProvider>
       </body>

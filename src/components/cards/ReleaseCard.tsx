@@ -1,65 +1,90 @@
-import { Box, Code, DollarSign, Zap } from "lucide-react";
-import { cn, formatHebrewDate } from "@/lib/utils";
+"use client";
 
-interface ReleaseCardProps {
-  titleHe: string;
-  summaryHe: string;
-  type: "model" | "api" | "pricing" | "feature";
-  version: string | null;
-  publishedAt: Date;
-  sourceUrl: string;
-  className?: string;
-}
+import type { ReleaseNote } from "@/types";
+import { formatHebrewDate } from "@/lib/utils";
 
-const typeConfig = {
-  model: { label: "מודל", icon: Box, className: "text-purple-600" },
-  api: { label: "API", icon: Code, className: "text-blue-600" },
-  pricing: { label: "תמחור", icon: DollarSign, className: "text-green-600" },
-  feature: { label: "פיצ'ר", icon: Zap, className: "text-orange-600" },
+const TYPE_CONFIG: Record<
+  string,
+  { label: string; dotColor: string; badgeBg: string; badgeText: string }
+> = {
+  model: {
+    label: "מודל",
+    dotColor: "bg-accent",
+    badgeBg: "bg-purple-100",
+    badgeText: "text-purple-700",
+  },
+  api: {
+    label: "API",
+    dotColor: "bg-blue-500",
+    badgeBg: "bg-blue-100",
+    badgeText: "text-blue-700",
+  },
+  pricing: {
+    label: "תמחור",
+    dotColor: "bg-green-500",
+    badgeBg: "bg-green-100",
+    badgeText: "text-green-700",
+  },
+  feature: {
+    label: "פיצ'ר",
+    dotColor: "bg-orange-500",
+    badgeBg: "bg-orange-100",
+    badgeText: "text-orange-700",
+  },
 };
 
 export default function ReleaseCard({
-  titleHe,
-  summaryHe,
-  type,
-  version,
-  publishedAt,
-  sourceUrl,
-  className,
-}: ReleaseCardProps) {
-  const config = typeConfig[type];
-  const Icon = config.icon;
+  release,
+}: {
+  release: ReleaseNote;
+}) {
+  const config = TYPE_CONFIG[release.type] || TYPE_CONFIG.feature;
+  const date = release.publishedAt?.toDate
+    ? release.publishedAt.toDate()
+    : new Date();
 
   return (
-    <a
-      href={sourceUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={cn(
-        "group block rounded-lg bg-card border border-border p-5 transition-all duration-300 hover:shadow-lg hover:border-secondary",
-        className
-      )}
-    >
-      <div className="flex items-center gap-3 mb-3">
-        <Icon className={cn("h-4 w-4", config.className)} />
-        <span className={cn("text-xs font-semibold uppercase", config.className)}>
-          {config.label}
-        </span>
-        {version && (
-          <span className="text-xs font-mono font-medium text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded">
-            {version}
+    <div className="relative pr-16 group">
+      {/* Timeline Dot */}
+      <div
+        className={`absolute right-[21px] top-8 w-3 h-3 rounded-full ${config.dotColor} border-4 border-white ring-4 ring-${config.dotColor.replace("bg-", "")}/10 transition-all group-hover:scale-125 z-10`}
+        style={{
+          boxShadow: `0 0 0 4px color-mix(in srgb, currentColor 10%, transparent)`,
+        }}
+      />
+      <div className="bg-white p-8 rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center gap-3 mb-4">
+          <span
+            className={`px-3 py-1 rounded-full ${config.badgeBg} ${config.badgeText} text-xs font-bold`}
+          >
+            {config.label}
           </span>
+          {release.version && (
+            <span className="text-slate-400 text-sm">{release.version}</span>
+          )}
+          <span className="text-slate-400 text-sm">&bull;</span>
+          <span className="text-slate-400 text-sm">
+            {formatHebrewDate(date)}
+          </span>
+        </div>
+        <h3 className="text-2xl font-bold headline-font mb-4 text-primary">
+          {release.titleHe}
+        </h3>
+        <p className="text-muted leading-relaxed mb-6">{release.summaryHe}</p>
+        {release.sourceUrl && (
+          <a
+            href={release.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-accent font-bold hover:underline"
+          >
+            קרא עוד
+            <span className="material-symbols-outlined text-sm">
+              arrow_back
+            </span>
+          </a>
         )}
-        <span className="text-xs text-outline ms-auto">
-          {formatHebrewDate(publishedAt)}
-        </span>
       </div>
-      <h3 className="text-lg font-semibold text-primary mb-2 group-hover:text-secondary transition-colors">
-        {titleHe}
-      </h3>
-      <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-3">
-        {summaryHe}
-      </p>
-    </a>
+    </div>
   );
 }

@@ -1,67 +1,77 @@
-import { ArrowUp, MessageSquare, ExternalLink } from "lucide-react";
-import { cn, timeAgo } from "@/lib/utils";
+"use client";
 
-interface RedditCardProps {
-  titleHe: string;
-  summaryHe: string;
-  subreddit: string;
-  score: number;
-  numComments: number;
-  author: string;
-  createdUtc: number;
-  url: string;
-  className?: string;
-}
+import type { RedditPost } from "@/types";
+import { timeAgo } from "@/lib/utils";
 
-export default function RedditCard({
-  titleHe,
-  summaryHe,
-  subreddit,
-  score,
-  numComments,
-  author,
-  createdUtc,
-  url,
-  className,
-}: RedditCardProps) {
+export default function RedditCard({ post }: { post: RedditPost }) {
+  const date = new Date(post.createdUtc * 1000);
+  const isClaudeAI = post.subreddit === "ClaudeAI";
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={cn(
-        "group flex gap-5 py-5 border-b border-border last:border-b-0 transition-colors",
-        className
-      )}
+    <article
+      className={`bg-white rounded-xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border-r-4 ${
+        isClaudeAI ? "border-accent" : "border-primary"
+      } flex flex-row-reverse p-6 transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg`}
     >
-      {/* Score */}
-      <div className="flex flex-col items-center min-w-[48px] pt-1 gap-0.5">
-        <ArrowUp className="h-4 w-4 text-secondary" />
-        <span className="text-base font-bold text-primary">{score}</span>
+      {/* Vote Count */}
+      <div className="flex flex-col items-center ml-6 min-w-[48px]">
+        <span className="material-symbols-outlined text-muted">
+          arrow_upward
+        </span>
+        <span className="font-bold text-lg text-primary my-1">
+          {post.score >= 1000
+            ? `${(post.score / 1000).toFixed(1)}k`
+            : post.score}
+        </span>
+        <span className="material-symbols-outlined text-muted">
+          arrow_downward
+        </span>
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-base font-semibold text-primary mb-1.5 leading-snug group-hover:text-secondary transition-colors line-clamp-2">
-          {titleHe}
-        </h3>
-        <p className="text-sm text-on-surface-variant leading-relaxed mb-3 line-clamp-2">
-          {summaryHe}
-        </p>
-        <div className="flex items-center gap-4 text-sm text-on-surface-variant flex-wrap">
-          <span className="font-medium text-secondary">r/{subreddit}</span>
-          <span>u/{author}</span>
-          <span>{timeAgo(new Date(createdUtc * 1000))}</span>
-          <span className="flex items-center gap-1">
-            <MessageSquare className="h-3.5 w-3.5" />
-            {numComments}
+      <div className="flex-grow text-right">
+        <div className="flex flex-row-reverse items-center gap-3 mb-3">
+          <span
+            className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded ${
+              isClaudeAI
+                ? "bg-accent/10 text-accent"
+                : "bg-primary/10 text-primary"
+            }`}
+          >
+            r/{post.subreddit}
           </span>
-          <span className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ms-auto">
-            <ExternalLink className="h-3.5 w-3.5" />
-            פתח ברדיט
+          <span className="text-muted text-xs">
+            {timeAgo(date)} &bull; פורסם ע&quot;י u/{post.author}
           </span>
         </div>
+        <h2 className="text-xl font-bold headline-font text-primary mb-2">
+          {post.titleHe}
+        </h2>
+        <p className="text-muted text-sm line-clamp-2 mb-4">
+          {post.summaryHe}
+        </p>
+        <div className="flex flex-row-reverse justify-between items-center">
+          <div className="flex flex-row-reverse items-center gap-4 text-muted text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm">
+                chat_bubble
+              </span>
+              <span>{post.numComments} תגובות</span>
+            </div>
+          </div>
+          <a
+            href={post.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-accent font-bold text-sm hover:underline"
+          >
+            <span>פתח ברדיט</span>
+            <span className="material-symbols-outlined text-sm">
+              arrow_back
+            </span>
+          </a>
+        </div>
       </div>
-    </a>
+    </article>
   );
 }

@@ -6,10 +6,10 @@ type Theme = "light" | "dark";
 
 const ThemeContext = createContext<{
   theme: Theme;
-  toggle: () => void;
+  toggleTheme: () => void;
 }>({
   theme: "light",
-  toggle: () => {},
+  toggleTheme: () => {},
 });
 
 export function useTheme() {
@@ -27,24 +27,19 @@ export default function ThemeProvider({
     const stored = localStorage.getItem("ail-theme") as Theme | null;
     if (stored) {
       setTheme(stored);
-      applyTheme(stored);
+      document.documentElement.setAttribute("data-theme", stored);
     }
   }, []);
 
-  function applyTheme(t: Theme) {
-    document.documentElement.setAttribute("data-theme", t);
-    document.documentElement.style.colorScheme = t;
-  }
-
-  function toggle() {
+  const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem("ail-theme", next);
-    applyTheme(next);
-  }
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
