@@ -1,84 +1,43 @@
-import Link from "next/link";
+import { Globe, MessageCircle } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer style={{ backgroundColor: "#f5f3ef", borderTop: "1px solid #e4e2de", marginTop: "auto" }}>
-      <div className="mx-auto max-w-[1200px] px-4" style={{ padding: "40px 16px" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: "40px",
-            marginBottom: "40px",
-          }}
-        >
-          {/* Brand */}
-          <div>
-            <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#030612", textTransform: "uppercase", marginBottom: "16px" }}>
-              אנתרופיק IL
-            </h4>
-            <p style={{ fontSize: "14px", color: "#45464c", lineHeight: 1.7 }}>
-              אגרגטור חדשות Anthropic ו-Claude בעברית.
-              תוכן מתורגם אוטומטית באמצעות Claude.
-            </p>
-          </div>
-
-          {/* Navigation */}
-          <div>
-            <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#030612", textTransform: "uppercase", marginBottom: "16px" }}>
-              ניווט
-            </h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {[
-                { href: "/news", label: "חדשות" },
-                { href: "/reddit", label: "רדיט" },
-                { href: "/tips", label: "טיפים" },
-                { href: "/releases", label: "עדכונים" },
-              ].map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="hover:!text-[#ab2c5d] transition-colors"
-                  style={{ fontSize: "14px", color: "#45464c" }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* External Links */}
-          <div>
-            <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#030612", textTransform: "uppercase", marginBottom: "16px" }}>
-              קישורים
-            </h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {[
-                { href: "https://www.anthropic.com", label: "Anthropic" },
-                { href: "https://claude.ai", label: "Claude" },
-                { href: "https://www.reddit.com/r/ClaudeAI", label: "r/ClaudeAI" },
-              ].map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:!text-[#ab2c5d] transition-colors"
-                  style={{ fontSize: "14px", color: "#45464c" }}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ paddingTop: "24px", borderTop: "1px solid #e4e2de", textAlign: "center" }}>
-          <p style={{ fontSize: "14px", color: "#45464c" }}>
-            עמוד זה אינו קשור רשמית לאנתרופיק, אך מוקדש לקהילת המשתמשים בישראל
-          </p>
-        </div>
+    <footer className="w-full pt-12 pb-24 px-6 bg-surface-container-low flex flex-col items-end space-y-4">
+      <span className="font-bold text-2xl text-primary mb-4 block tracking-tighter">
+        אנתרופיק IL
+      </span>
+      <div className="flex gap-8 mb-6">
+        <a className="text-sm text-primary/70 hover:text-primary transition-colors" href="#">
+          תנאי שימוש
+        </a>
+        <a className="text-sm text-primary/70 hover:text-primary transition-colors" href="#">
+          פרטיות
+        </a>
+        <a className="text-sm text-primary/70 hover:text-primary transition-colors" href="#">
+          צור קשר
+        </a>
       </div>
+      <div className="flex gap-4 mb-4">
+        <a
+          className="p-2 bg-surface-container-high rounded-full hover:bg-secondary-fixed transition-colors"
+          href="https://www.anthropic.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Globe className="h-5 w-5 text-primary" />
+        </a>
+        <a
+          className="p-2 bg-surface-container-high rounded-full hover:bg-secondary-fixed transition-colors"
+          href="https://www.reddit.com/r/ClaudeAI"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <MessageCircle className="h-5 w-5 text-primary" />
+        </a>
+      </div>
+      <p className="text-sm text-primary/60">
+        © 2026 אנתרופיק IL - כל הזכויות שמורות
+      </p>
     </footer>
   );
 }

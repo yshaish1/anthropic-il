@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ail_reddit_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "curated", "order": "ASCENDING" },
+        { "fieldPath": "score", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ail_reddit_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "curated", "order": "ASCENDING" },
+        { "fieldPath": "subreddit", "order": "ASCENDING" },
+        { "fieldPath": "score", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ail_tips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    }
+  ]
+}

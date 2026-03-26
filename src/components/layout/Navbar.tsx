@@ -2,95 +2,104 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Moon } from "lucide-react";
+import { Menu, X, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/providers/ThemeProvider";
 
 const navLinks = [
-  { href: "/", label: "ראשי" },
-  { href: "/news", label: "חדשות" },
+  { href: "/news", label: "חדשות", active: true },
   { href: "/reddit", label: "רדיט" },
   { href: "/tips", label: "טיפים" },
   { href: "/releases", label: "עדכונים" },
 ];
 
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  const [animating, setAnimating] = useState(false);
+
+  function handleClick() {
+    setAnimating(true);
+    toggle();
+    setTimeout(() => setAnimating(false), 500);
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      className="p-2 rounded-full hover:bg-surface-container-low transition-all active:scale-90"
+      aria-label="החלף ערכת נושא"
+    >
+      <div className={cn("transition-all duration-500", animating && "rotate-[360deg] scale-0")}>
+        {theme === "light" ? (
+          <Moon className="h-5 w-5 text-primary" />
+        ) : (
+          <Sun className="h-5 w-5 text-primary" />
+        )}
+      </div>
+    </button>
+  );
+}
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header
-      className="sticky top-0 z-50"
-      style={{ backgroundColor: "#fbf9f5", borderBottom: "1px solid #e4e2de" }}
-    >
-      <div className="mx-auto max-w-[1200px] px-4">
-        <div className="flex items-center justify-between" style={{ padding: "16px 0" }}>
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span
-              className="font-black"
-              style={{ fontSize: "14px", color: "#ab2c5d" }}
-            >
-              IL
-            </span>
-            <span
-              className="font-bold"
-              style={{ fontSize: "18px", color: "#030612", fontFamily: "var(--font-be-vietnam-pro, 'Be Vietnam Pro', var(--font-rubik, 'Rubik', sans-serif))" }}
-            >
-              אנתרופיק
-            </span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center" style={{ gap: "32px" }}>
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                style={{ fontSize: "14px", fontWeight: 500, color: "#1b1c1a" }}
-                className="hover:!text-[#ab2c5d] transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right: moon + hamburger */}
-          <div className="flex items-center gap-3">
-            <button style={{ color: "#45464c" }} className="p-1">
-              <Moon className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-1"
-              style={{ color: "#1b1c1a" }}
-            >
-              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Nav */}
-      <div
-        className={cn(
-          "md:hidden overflow-hidden transition-all duration-300",
-          mobileOpen ? "max-h-80" : "max-h-0"
-        )}
-        style={{ borderTop: mobileOpen ? "1px solid #e4e2de" : "none" }}
-      >
-        <div className="px-4 py-2">
+    <header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl flex items-center justify-between px-6 h-16">
+      {/* Right side: Logo + Nav */}
+      <div className="flex items-center">
+        <Link href="/" className="text-2xl font-black text-primary tracking-tighter ml-4">
+          אנתרופיק IL
+        </Link>
+        <nav className="hidden md:flex gap-8 mr-8">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              onClick={() => setMobileOpen(false)}
-              className="block hover:!text-[#ab2c5d] transition-colors"
-              style={{ padding: "12px 0", fontSize: "14px", fontWeight: 500, color: "#1b1c1a" }}
+              className={cn(
+                "text-xl tracking-tighter px-2 transition-colors",
+                link.active
+                  ? "text-secondary font-bold"
+                  : "text-primary-container hover:bg-surface-container-low"
+              )}
             >
               {link.label}
             </Link>
           ))}
-        </div>
+        </nav>
       </div>
+
+      {/* Left side: Theme + Menu */}
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="md:hidden p-2 rounded-full hover:bg-surface-container-low transition-all active:scale-90"
+        >
+          {mobileOpen ? (
+            <X className="h-6 w-6 text-primary" />
+          ) : (
+            <Menu className="h-6 w-6 text-primary" />
+          )}
+        </button>
+      </div>
+
+      {/* Mobile dropdown */}
+      {mobileOpen && (
+        <div className="absolute top-16 left-0 right-0 bg-surface/95 backdrop-blur-xl border-b border-outline-variant/15 md:hidden">
+          <div className="px-6 py-4 space-y-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="block py-3 text-lg font-medium text-primary hover:text-secondary transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

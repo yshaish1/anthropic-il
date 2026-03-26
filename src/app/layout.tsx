@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Rubik, Be_Vietnam_Pro } from "next/font/google";
 import { Toaster } from "sonner";
 import QueryProvider from "@/components/providers/QueryProvider";
+import ThemeProvider from "@/components/providers/ThemeProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import "./globals.css";
@@ -33,19 +34,19 @@ export default function RootLayout({
     <html
       lang="he"
       dir="rtl"
+      data-theme="light"
       className={`${rubik.variable} ${beVietnamPro.variable} antialiased`}
-      style={{ colorScheme: "light" }}
+      suppressHydrationWarning
     >
-      <body
-        style={{ backgroundColor: "#fbf9f5", color: "#1b1c1a" }}
-        className="min-h-dvh flex flex-col"
-      >
-        <QueryProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <Toaster position="bottom-left" dir="rtl" />
-        </QueryProvider>
+      <body className="min-h-dvh flex flex-col">
+        <ThemeProvider>
+          <QueryProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <Toaster position="bottom-left" dir="rtl" />
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

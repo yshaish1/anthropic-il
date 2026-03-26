@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
       (a) => !existingSlugs.has(a.slug)
     );
 
-    // Process up to 5 new articles per run to stay within timeout
-    for (const article of newArticles.slice(0, 5)) {
+    // Process up to 3 new articles per run to stay within timeout
+    for (const article of newArticles.slice(0, 3)) {
       try {
         const content = await fetchArticleContent(article.slug);
 
